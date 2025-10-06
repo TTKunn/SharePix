@@ -1,0 +1,29 @@
+{
+  "string": [
+    {
+      "name": "module_desc",
+      "value": "module description"
+    },
+    {
+      "name": "EntryAbility_desc",
+      "value": "description"
+    },
+    {
+      "name": "EntryAbility_label",
+      "value": "label"
+    },
+
+    {
+      "name": "perm_set_window_label",
+      "value": "窗口类型权限"
+    },
+    {
+      "name": "perm_set_window_reason",
+      "value": "应用需要设置窗口类型以正常显示界面"
+    },
+    {
+      "name": "perm_internet_reason",
+      "value": "应用需要联网获取数据"
+    }
+  ]
+}
