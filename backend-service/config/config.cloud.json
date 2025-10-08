@@ -1,0 +1,57 @@
+{
+  "server": {
+    "host": "0.0.0.0",
+    "port": 8080,
+    "thread_pool_size": 8,
+    "read_timeout": 30,
+    "write_timeout": 30,
+    "idle_timeout": 60
+  },
+  "database": {
+    "host": "8.138.115.164",
+    "port": 3306,
+    "database": "shared_parking",
+    "username": "root",
+    "password": "Xzk200411.",
+    "pool_size": 10,
+    "connection_timeout": 30,
+    "charset": "utf8mb4"
+  },
+  "jwt": {
+    "secret": "your-super-secret-jwt-key-change-this-in-production",
+    "algorithm": "HS256",
+    "expires_in": 3600,
+    "refresh_expires_in": 86400,
+    "issuer": "shared-parking-auth",
+    "audience": "shared-parking-users"
+  },
+  "security": {
+    "password_hash_algorithm": "pbkdf2",
+    "pbkdf2_iterations": 100000,
+    "salt_length": 32,
+    "min_password_length": 8,
+    "max_password_length": 128
+  },
+  "logging": {
+    "level": "info",
+    "file": "logs/auth-service.log",
+    "max_file_size": "10MB",
+    "max_files": 5,
+    "console_output": true
+  },
+  "api": {
+    "version": "v1",
+    "base_path": "/api",
+    "enable_cors": true,
+    "cors_origins": ["*"],
+    "rate_limit": {
+      "enabled": false,
+      "requests_per_minute": 60
+    }
+  },
+  "health": {
+    "endpoint": "/health",
+    "check_database": true
+  }
+}
+

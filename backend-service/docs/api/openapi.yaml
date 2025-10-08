@@ -1,0 +1,938 @@
+openapi: 3.0.3
+info:
+  title: Knot - Image Sharing Service API
+  description: |
+    Knot图片分享系统API文档
+    
+    ## 功能特性
+    - 用户认证与授权（JWT）
+    - 图片上传与管理
+    - 图文推文发布
+    - 标签系统
+    
+    ## 安全说明
+    - 密码使用PBKDF2-HMAC-SHA256加密（100,000次迭代）
+    - JWT令牌使用HS256签名算法
+    - 所有数据库查询使用预编译语句防止SQL注入
+  version: 1.2.0
+  contact:
+    name: Knot Team
+    email: support@knot.example.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:8080/api/v1
+    description: 本地开发服务器
+  - url: https://api.knot.example.com/api/v1
+    description: 生产环境服务器
+
+tags:
+  - name: 认证
+    description: 用户认证相关接口
+  - name: 图片管理
+    description: 图片上传、查询、编辑、删除
+  - name: 系统
+    description: 系统健康检查和监控
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT访问令牌
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: 物理ID
+          example: 1
+        user_id:
+          type: string
+          description: 逻辑ID
+          example: "USR_2025Q1_A1B2C3"
+        username:
+          type: string
+          description: 用户名
+          example: "zhangsan"
+        real_name:
+          type: string
+          description: 真实姓名
+          example: "张三"
+        phone:
+          type: string
+          description: 手机号
+          example: "13800138000"
+        email:
+          type: string
+          description: 邮箱
+          example: "zhangsan@example.com"
+        role:
+          type: string
+          enum: [USER, ADMIN]
+          description: 用户角色
+          example: "USER"
+        status:
+          type: string
+          enum: [active, inactive, banned]
+          description: 账户状态
+          example: "active"
+        avatar_url:
+          type: string
+          description: 头像URL
+          example: ""
+        device_count:
+          type: integer
+          description: 设备数量
+          example: 0
+        create_time:
+          type: integer
+          format: int64
+          description: 创建时间（Unix时间戳）
+          example: 1704067200
+        update_time:
+          type: integer
+          format: int64
+          description: 更新时间（Unix时间戳）
+          example: 1704067200
+
+    Image:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: 物理ID
+          example: 1
+        image_id:
+          type: string
+          description: 业务逻辑ID
+          example: "IMG_2025Q4_123456"
+        user_id:
+          type: integer
+          description: 用户ID
+          example: 1
+        title:
+          type: string
+          description: 图片标题
+          example: "美丽的风景"
+        description:
+          type: string
+          description: 图片描述
+          example: "今天拍摄的日落"
+        file_url:
+          type: string
+          description: 图片文件URL
+          example: "/uploads/images/abc123.jpg"
+        thumbnail_url:
+          type: string
+          description: 缩略图URL
+          example: "/uploads/thumbnails/abc123_thumb.jpg"
+        file_size:
+          type: integer
+          description: 文件大小（字节）
+          example: 1024000
+        width:
+          type: integer
+          description: 图片宽度
+          example: 1920
+        height:
+          type: integer
+          description: 图片高度
+          example: 1080
+        mime_type:
+          type: string
+          description: MIME类型
+          example: "image/jpeg"
+        like_count:
+          type: integer
+          description: 点赞数
+          example: 10
+        favorite_count:
+          type: integer
+          description: 收藏数
+          example: 5
+        view_count:
+          type: integer
+          description: 浏览数
+          example: 100
+        status:
+          type: string
+          enum: [PENDING, APPROVED, REJECTED]
+          description: 审核状态
+          example: "APPROVED"
+        create_time:
+          type: integer
+          format: int64
+          description: 创建时间（Unix时间戳）
+          example: 1759844400
+        update_time:
+          type: integer
+          format: int64
+          description: 更新时间（Unix时间戳）
+          example: 1759844400
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: "操作成功"
+        data:
+          type: object
+        timestamp:
+          type: integer
+          format: int64
+          example: 1759844400
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "错误描述"
+        data:
+          type: object
+          nullable: true
+          example: null
+        timestamp:
+          type: integer
+          format: int64
+          example: 1759844400
+
+    LoginRequest:
+      type: object
+      required:
+        - username
+        - password
+      properties:
+        username:
+          type: string
+          description: 用户名/手机号/邮箱
+          example: "zhangsan"
+        password:
+          type: string
+          format: password
+          description: 密码
+          example: "password123"
+
+    LoginResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                access_token:
+                  type: string
+                  description: 访问令牌（有效期1小时）
+                  example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                refresh_token:
+                  type: string
+                  description: 刷新令牌（有效期24小时）
+                  example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                user:
+                  $ref: '#/components/schemas/User'
+
+    RegisterRequest:
+      type: object
+      required:
+        - username
+        - password
+        - real_name
+        - phone
+      properties:
+        username:
+          type: string
+          minLength: 3
+          maxLength: 50
+          pattern: '^[a-zA-Z0-9_]+$'
+          description: 用户名（3-50字符，字母数字下划线）
+          example: "zhangsan"
+        password:
+          type: string
+          format: password
+          minLength: 6
+          maxLength: 100
+          description: 密码（6-100字符）
+          example: "password123"
+        real_name:
+          type: string
+          maxLength: 50
+          description: 真实姓名
+          example: "张三"
+        phone:
+          type: string
+          pattern: '^1[3-9]\d{9}$'
+          description: 手机号（11位中国手机号）
+          example: "13800138000"
+        email:
+          type: string
+          format: email
+          description: 邮箱（可选）
+          example: "zhangsan@example.com"
+        role:
+          type: string
+          enum: [USER, ADMIN]
+          default: USER
+          description: 用户角色
+          example: "USER"
+
+    ImageUploadRequest:
+      type: object
+      required:
+        - image
+        - title
+      properties:
+        image:
+          type: string
+          format: binary
+          description: 图片文件（支持JPEG/PNG/WebP，最大5MB）
+        title:
+          type: string
+          maxLength: 255
+          description: 推文标题
+          example: "美丽的风景"
+        description:
+          type: string
+          description: 推文配文
+          example: "今天拍摄的日落"
+        tags:
+          type: string
+          description: 标签列表（逗号分隔，最多5个）
+          example: "风景,日落,摄影"
+
+    ImageUpdateRequest:
+      type: object
+      required:
+        - title
+      properties:
+        title:
+          type: string
+          maxLength: 255
+          description: 新标题
+          example: "更新后的标题"
+        description:
+          type: string
+          description: 新配文
+          example: "更新后的配文"
+
+    ImageListResponse:
+      allOf:
+        - $ref: '#/components/schemas/SuccessResponse'
+        - type: object
+          properties:
+            data:
+              type: object
+              properties:
+                total:
+                  type: integer
+                  description: 总数量
+                  example: 100
+                page:
+                  type: integer
+                  description: 当前页码
+                  example: 1
+                page_size:
+                  type: integer
+                  description: 每页数量
+                  example: 20
+                images:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/Image'
+
+paths:
+  /auth/register:
+    post:
+      tags:
+        - 认证
+      summary: 用户注册
+      description: 注册新用户账号
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+      responses:
+        '200':
+          description: 注册成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/User'
+        '400':
+          description: 请求参数错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                usernameExists:
+                  value:
+                    success: false
+                    message: "用户名已存在"
+                    data: null
+                phoneExists:
+                  value:
+                    success: false
+                    message: "手机号已被注册"
+                    data: null
+
+  /auth/login:
+    post:
+      tags:
+        - 认证
+      summary: 用户登录
+      description: 用户登录获取访问令牌
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: 登录成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: 认证失败
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                wrongPassword:
+                  value:
+                    success: false
+                    message: "密码错误"
+                    data: null
+                userNotFound:
+                  value:
+                    success: false
+                    message: "用户不存在"
+                    data: null
+
+  /auth/validate:
+    post:
+      tags:
+        - 认证
+      summary: 令牌验证
+      description: 验证JWT访问令牌是否有效
+      operationId: validateToken
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+              properties:
+                token:
+                  type: string
+                  description: JWT访问令牌
+                  example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+      responses:
+        '200':
+          description: 令牌验证结果
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "令牌有效"
+                  data:
+                    type: object
+                    properties:
+                      user_id:
+                        type: integer
+                        example: 1
+                      username:
+                        type: string
+                        example: "zhangsan"
+
+  /auth/refresh:
+    post:
+      tags:
+        - 认证
+      summary: 令牌刷新
+      description: 使用刷新令牌获取新的访问令牌
+      operationId: refreshToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - refresh_token
+              properties:
+                refresh_token:
+                  type: string
+                  description: JWT刷新令牌
+                  example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+      responses:
+        '200':
+          description: 令牌刷新成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          access_token:
+                            type: string
+                            example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                          refresh_token:
+                            type: string
+                            example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+        '401':
+          description: 刷新令牌无效
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/logout:
+    post:
+      tags:
+        - 认证
+      summary: 用户登出
+      description: 用户登出（JWT令牌自动过期）
+      operationId: logout
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - access_token
+              properties:
+                access_token:
+                  type: string
+                  description: JWT访问令牌
+                  example: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+      responses:
+        '200':
+          description: 登出成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+
+  /auth/change-password:
+    post:
+      tags:
+        - 认证
+      summary: 修改密码
+      description: 修改用户密码
+      operationId: changePassword
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - user_id
+                - old_password
+                - new_password
+              properties:
+                user_id:
+                  type: integer
+                  description: 用户ID
+                  example: 1
+                old_password:
+                  type: string
+                  format: password
+                  description: 旧密码
+                  example: "password123"
+                new_password:
+                  type: string
+                  format: password
+                  minLength: 6
+                  maxLength: 100
+                  description: 新密码（6-100字符）
+                  example: "newpassword456"
+      responses:
+        '200':
+          description: 密码修改成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: 请求参数错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 旧密码不正确
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /images:
+    post:
+      tags:
+        - 图片管理
+      summary: 上传图片
+      description: 用户上传图文推文（图片为主 + 配文）
+      operationId: uploadImage
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/ImageUploadRequest'
+      responses:
+        '201':
+          description: 图片上传成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Image'
+        '400':
+          description: 请求参数错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 未授权
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    get:
+      tags:
+        - 图片管理
+      summary: 获取最新图片列表
+      description: 获取最新发布的图文推文列表（按时间倒序）
+      operationId: getRecentImages
+      parameters:
+        - name: page
+          in: query
+          description: 页码（从1开始）
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+            example: 1
+        - name: page_size
+          in: query
+          description: 每页数量（最大100）
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+            example: 20
+      responses:
+        '200':
+          description: 查询成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImageListResponse'
+        '400':
+          description: 请求参数错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /images/{id}:
+    get:
+      tags:
+        - 图片管理
+      summary: 获取图片详情
+      description: 获取指定图文推文的详细信息（会增加浏览数）
+      operationId: getImageById
+      parameters:
+        - name: id
+          in: path
+          description: 图片业务逻辑ID（image_id）
+          required: true
+          schema:
+            type: string
+            example: "IMG_2025Q4_123456"
+      responses:
+        '200':
+          description: 查询成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/Image'
+        '404':
+          description: 图片不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      tags:
+        - 图片管理
+      summary: 更新图文配文
+      description: 更新图文推文的标题和配文（只有所有者可以编辑）
+      operationId: updateImage
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: 图片业务逻辑ID（image_id）
+          required: true
+          schema:
+            type: string
+            example: "IMG_2025Q4_123456"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImageUpdateRequest'
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: 请求参数错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 未授权
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: 无权限或图片不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags:
+        - 图片管理
+      summary: 删除图片
+      description: 删除图文推文（只有所有者可以删除）
+      operationId: deleteImage
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          description: 图片业务逻辑ID（image_id）
+          required: true
+          schema:
+            type: string
+            example: "IMG_2025Q4_123456"
+      responses:
+        '200':
+          description: 删除成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: 未授权
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: 无权限或图片不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /users/{id}/images:
+    get:
+      tags:
+        - 图片管理
+      summary: 获取用户图片列表
+      description: 获取指定用户发布的图文推文列表
+      operationId: getUserImages
+      parameters:
+        - name: id
+          in: path
+          description: 用户ID
+          required: true
+          schema:
+            type: integer
+            example: 1
+        - name: page
+          in: query
+          description: 页码（从1开始）
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+            example: 1
+        - name: page_size
+          in: query
+          description: 每页数量（最大100）
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+            example: 20
+      responses:
+        '200':
+          description: 查询成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImageListResponse'
+        '400':
+          description: 请求参数错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /health:
+    get:
+      tags:
+        - 系统
+      summary: 健康检查
+      description: 检查服务是否正常运行
+      operationId: healthCheck
+      responses:
+        '200':
+          description: 服务正常
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "healthy"
+                  timestamp:
+                    type: integer
+                    format: int64
+                    example: 1704067200
+
+  /metrics:
+    get:
+      tags:
+        - 系统
+      summary: 系统指标
+      description: 获取系统运行指标
+      operationId: getMetrics
+      responses:
+        '200':
+          description: 指标获取成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  uptime:
+                    type: integer
+                    description: 运行时间（秒）
+                    example: 3600
+                  requests_total:
+                    type: integer
+                    description: 总请求数
+                    example: 1234
+                  database_connections:
+                    type: integer
+                    description: 数据库连接数
+                    example: 10
+
+  /version:
+    get:
+      tags:
+        - 系统
+      summary: 版本信息
+      description: 获取API版本信息
+      operationId: getVersion
+      responses:
+        '200':
+          description: 版本信息获取成功
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  version:
+                    type: string
+                    example: "1.0.0"
+                  service:
+                    type: string
+                    example: "Knot - Image Sharing Service"
+                  timestamp:
+                    type: integer
+                    format: int64
+                    example: 1704067200
+

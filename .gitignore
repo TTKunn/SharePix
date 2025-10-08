@@ -1,10 +1,110 @@
+# ============================================
+# Knot 图片分享系统 - Git Ignore File
+# ============================================
+
+# ============================================
+# 编译输出
+# ============================================
 /build/
 /.hvigor/
 /oh_modules/
 /*.hap
-/.idea/
 
-# 包含测试和文档忽略规则
+# ============================================
+# IDE和编辑器
+# ============================================
+/.idea/
+/.vscode/
+*.code-workspace
+
+# ============================================
+# 日志文件
+# ============================================
+*.log
+logs/
+log/
+
+# ============================================
+# 配置文件（敏感信息）
+# ============================================
+# 后端配置
+backend-service/config/config.json
+backend-service/config/config.production.json
+!backend-service/config/config.example.json
+
+# 数据库配置
+*.db.json
+config/database.json
+
+# 环境变量
+.env
+.env.*
+!.env.example
+
+# SSL证书和密钥
+*.pem
+*.key
+*.crt
+*.cer
+*.p12
+*.pfx
+
+# ============================================
+# 临时文件和缓存
+# ============================================
 /test/build/
 /docs/site/
 /.local/
+*.tmp
+*.temp
+*.bak
+*.backup
+*.old
+cache/
+.cache/
+
+# ============================================
+# 操作系统
+# ============================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE_BIN/
+
+# Linux
+*~
+.directory
+.Trash-*
+
+# ============================================
+# 部署相关
+# ============================================
+# 部署包
+backend-service/deploy-static/build/
+knot-deploy-*.tar.gz
+
+# 上传的文件
+uploads/
+temp/
+tmp/
+
+# ============================================
+# 其他
+# ============================================
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+
+# Python
+__pycache__/
+*.py[cod]
+venv/
+env/
