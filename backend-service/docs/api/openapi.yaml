@@ -3,18 +3,23 @@ info:
   title: Knot - Image Sharing Service API
   description: |
     Knot图片分享系统API文档
-    
+
     ## 功能特性
     - 用户认证与授权（JWT）
+    - 多图片帖子发布（1-9张图片）
     - 图片上传与管理
-    - 图文推文发布
     - 标签系统
-    
+    - Feed流推荐
+
     ## 安全说明
     - 密码使用PBKDF2-HMAC-SHA256加密（100,000次迭代）
     - JWT令牌使用HS256签名算法
     - 所有数据库查询使用预编译语句防止SQL注入
-  version: 1.2.0
+
+    ## 版本更新
+    - v2.0.0: 新增多图片帖子系统，支持1-9张图片上传
+    - v1.2.0: 基础图片管理功能
+  version: 2.0.0
   contact:
     name: Knot Team
     email: support@knot.example.com
@@ -31,6 +36,8 @@ servers:
 tags:
   - name: 认证
     description: 用户认证相关接口
+  - name: 帖子管理
+    description: 多图片帖子的创建、查询、编辑、删除（v2.0新增）
   - name: 图片管理
     description: 图片上传、查询、编辑、删除
   - name: 系统
@@ -175,6 +182,80 @@ components:
           format: int64
           description: 更新时间（Unix时间戳）
           example: 1759844400
+
+    Post:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: 物理ID
+          example: 1
+        post_id:
+          type: string
+          description: 业务逻辑ID
+          example: "POST_2025Q4_123456"
+        user_id:
+          type: integer
+          description: 用户ID
+          example: 1
+        title:
+          type: string
+          description: 帖子标题
+          example: "美好的一天"
+        description:
+          type: string
+          description: 帖子描述/配文
+          example: "今天天气真好！"
+        image_count:
+          type: integer
+          description: 图片数量
+          example: 3
+        like_count:
+          type: integer
+          description: 点赞数
+          example: 10
+        favorite_count:
+          type: integer
+          description: 收藏数
+          example: 5
+        view_count:
+          type: integer
+          description: 浏览数
+          example: 100
+        share_count:
+          type: integer
+          description: 分享数
+          example: 2
+        comment_count:
+          type: integer
+          description: 评论数
+          example: 8
+        status:
+          type: string
+          enum: [PENDING, APPROVED, REJECTED]
+          description: 审核状态
+          example: "APPROVED"
+        create_time:
+          type: integer
+          format: int64
+          description: 创建时间（Unix时间戳）
+          example: 1759844400
+        update_time:
+          type: integer
+          format: int64
+          description: 更新时间（Unix时间戳）
+          example: 1759844400
+        images:
+          type: array
+          description: 帖子包含的图片列表
+          items:
+            $ref: '#/components/schemas/Image'
+        tags:
+          type: array
+          description: 帖子标签
+          items:
+            type: string
+          example: ["风景", "旅行"]
 
     SuccessResponse:
       type: object
@@ -608,6 +689,557 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
         '401':
           description: 旧密码不正确
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /posts:
+    post:
+      tags:
+        - 帖子管理
+      summary: 创建帖子
+      description: |
+        创建多图片帖子（1-9张图片）
+
+        **注意**：使用multipart/form-data格式上传
+        - title: 帖子标题（必填）
+        - description: 帖子描述/配文（可选）
+        - imageFiles: 图片文件，可以多次使用此字段上传多张图片（1-9张）
+        - tags: 标签，可以多次使用此字段添加多个标签（可选）
+      operationId: createPost
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - title
+                - imageFiles
+              properties:
+                title:
+                  type: string
+                  description: 帖子标题
+                  example: "美好的一天"
+                description:
+                  type: string
+                  description: 帖子描述/配文
+                  example: "今天天气真好！"
+                imageFiles:
+                  type: array
+                  description: 图片文件（1-9张）
+                  items:
+                    type: string
+                    format: binary
+                  minItems: 1
+                  maxItems: 9
+                tags:
+                  type: array
+                  description: 标签列表
+                  items:
+                    type: string
+                  example: ["风景", "旅行"]
+      responses:
+        '201':
+          description: 帖子创建成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          post:
+                            $ref: '#/components/schemas/Post'
+        '400':
+          description: 请求参数错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidImageCount:
+                  value:
+                    success: false
+                    message: "图片数量必须在1-9张之间"
+                    data: null
+                invalidFileType:
+                  value:
+                    success: false
+                    message: "只能上传图片文件"
+                    data: null
+                fileTooLarge:
+                  value:
+                    success: false
+                    message: "图片文件大小不能超过5MB"
+                    data: null
+        '401':
+          description: 未授权
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    get:
+      tags:
+        - 帖子管理
+      summary: 获取Feed流
+      description: 获取最新帖子列表（按时间倒序）
+      operationId: getRecentPosts
+      parameters:
+        - name: page
+          in: query
+          description: 页码（从1开始）
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+        - name: page_size
+          in: query
+          description: 每页数量
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          posts:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/Post'
+                          total:
+                            type: integer
+                            description: 总数
+                            example: 100
+                          page:
+                            type: integer
+                            description: 当前页码
+                            example: 1
+                          page_size:
+                            type: integer
+                            description: 每页数量
+                            example: 20
+
+  /posts/{post_id}:
+    get:
+      tags:
+        - 帖子管理
+      summary: 获取帖子详情
+      description: 根据帖子ID获取帖子详细信息
+      operationId: getPostDetail
+      parameters:
+        - name: post_id
+          in: path
+          required: true
+          description: 帖子ID
+          schema:
+            type: string
+            example: "POST_2025Q4_123456"
+      responses:
+        '200':
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          post:
+                            $ref: '#/components/schemas/Post'
+        '404':
+          description: 帖子不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags:
+        - 帖子管理
+      summary: 更新帖子
+      description: 更新帖子的标题、描述或标签
+      operationId: updatePost
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: post_id
+          in: path
+          required: true
+          description: 帖子ID
+          schema:
+            type: string
+            example: "POST_2025Q4_123456"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                title:
+                  type: string
+                  description: 新标题
+                  example: "更新后的标题"
+                description:
+                  type: string
+                  description: 新描述
+                  example: "更新后的描述"
+                tags:
+                  type: array
+                  description: 新标签列表
+                  items:
+                    type: string
+                  example: ["风景", "旅行", "美食"]
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: 请求参数错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 未授权
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: 无权限（不是帖子作者）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 帖子不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags:
+        - 帖子管理
+      summary: 删除帖子
+      description: 删除指定的帖子及其所有图片
+      operationId: deletePost
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: post_id
+          in: path
+          required: true
+          description: 帖子ID
+          schema:
+            type: string
+            example: "POST_2025Q4_123456"
+      responses:
+        '200':
+          description: 删除成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '401':
+          description: 未授权
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: 无权限（不是帖子作者）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 帖子不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /users/{user_id}/posts:
+    get:
+      tags:
+        - 帖子管理
+      summary: 获取用户帖子列表
+      description: 获取指定用户的所有帖子
+      operationId: getUserPosts
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          description: 用户ID
+          schema:
+            type: integer
+            example: 1
+        - name: page
+          in: query
+          description: 页码（从1开始）
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+        - name: page_size
+          in: query
+          description: 每页数量
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          posts:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/Post'
+                          total:
+                            type: integer
+                            description: 总数
+                            example: 50
+                          page:
+                            type: integer
+                            description: 当前页码
+                            example: 1
+                          page_size:
+                            type: integer
+                            description: 每页数量
+                            example: 20
+
+  /posts/{post_id}/images:
+    post:
+      tags:
+        - 帖子管理
+      summary: 向帖子添加图片
+      description: 向已存在的帖子添加新图片（最多9张）
+      operationId: addImageToPost
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: post_id
+          in: path
+          required: true
+          description: 帖子ID
+          schema:
+            type: string
+            example: "POST_2025Q4_123456"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - imageFile
+              properties:
+                imageFile:
+                  type: string
+                  format: binary
+                  description: 图片文件
+      responses:
+        '201':
+          description: 图片添加成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          image:
+                            $ref: '#/components/schemas/Image'
+        '400':
+          description: 请求参数错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                tooManyImages:
+                  value:
+                    success: false
+                    message: "帖子图片数量已达上限（9张）"
+                    data: null
+        '401':
+          description: 未授权
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: 无权限（不是帖子作者）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 帖子不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /posts/{post_id}/images/{image_id}:
+    delete:
+      tags:
+        - 帖子管理
+      summary: 删除帖子中的图片
+      description: 从帖子中删除指定的图片
+      operationId: removeImageFromPost
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: post_id
+          in: path
+          required: true
+          description: 帖子ID
+          schema:
+            type: string
+            example: "POST_2025Q4_123456"
+        - name: image_id
+          in: path
+          required: true
+          description: 图片ID
+          schema:
+            type: string
+            example: "IMG_2025Q4_123456"
+      responses:
+        '200':
+          description: 删除成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: 请求参数错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                lastImage:
+                  value:
+                    success: false
+                    message: "帖子至少需要保留一张图片"
+                    data: null
+        '401':
+          description: 未授权
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: 无权限（不是帖子作者）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 帖子或图片不存在
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /posts/{post_id}/images/order:
+    put:
+      tags:
+        - 帖子管理
+      summary: 调整图片顺序
+      description: 调整帖子中图片的显示顺序
+      operationId: reorderImages
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: post_id
+          in: path
+          required: true
+          description: 帖子ID
+          schema:
+            type: string
+            example: "POST_2025Q4_123456"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - image_ids
+              properties:
+                image_ids:
+                  type: array
+                  description: 图片ID列表（按新顺序排列）
+                  items:
+                    type: string
+                  example: ["IMG_2025Q4_123456", "IMG_2025Q4_789012", "IMG_2025Q4_345678"]
+      responses:
+        '200':
+          description: 调整成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        '400':
+          description: 请求参数错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 未授权
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: 无权限（不是帖子作者）
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 帖子不存在
           content:
             application/json:
               schema:

@@ -1,43 +1,19 @@
 /**
  * @file image_repository.cpp
- * @brief 图片数据访问层实现
+ * @brief 图片数据访问层实现（Post系统版本）
  * @author Knot Team
- * @date 2025-10-07
+ * @date 2025-10-08
  */
 
 #include "database/image_repository.h"
 #include "database/connection_pool.h"
 #include "database/connection_guard.h"
+#include "database/mysql_statement.h"
 #include "utils/logger.h"
 #include <mysql/mysql.h>
 #include <cstring>
 #include <memory>
-
-// RAII 封装 MYSQL_STMT
-class MySQLStatement {
-public:
-    explicit MySQLStatement(MYSQL* conn) {
-        stmt_ = mysql_stmt_init(conn);
-        if (!stmt_) {
-            Logger::error("Failed to initialize MySQL statement");
-        }
-    }
-    
-    ~MySQLStatement() {
-        if (stmt_) {
-            mysql_stmt_close(stmt_);
-        }
-    }
-    
-    MYSQL_STMT* get() { return stmt_; }
-    
-    // 禁止拷贝
-    MySQLStatement(const MySQLStatement&) = delete;
-    MySQLStatement& operator=(const MySQLStatement&) = delete;
-    
-private:
-    MYSQL_STMT* stmt_;
-};
+#include <sstream>
 
 // 构造函数
 ImageRepository::ImageRepository() {
@@ -55,12 +31,12 @@ bool ImageRepository::createImage(const Image& image) {
         }
 
         MySQLStatement stmt(connGuard.get());
-        if (!stmt.get()) {
+        if (!stmt.isValid()) {
             return false;
         }
         
-        // SQL 插入语句
-        const char* query = "INSERT INTO images (image_id, user_id, title, description, file_url, thumbnail_url, file_size, width, height, mime_type, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        // SQL 插入语句（新字段：post_id, display_order；移除：title, description, status）
+        const char* query = "INSERT INTO images (image_id, post_id, display_order, user_id, file_url, thumbnail_url, file_size, width, height, mime_type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
         
         if (mysql_stmt_prepare(stmt.get(), query, strlen(query)) != 0) {
             Logger::error("Failed to prepare statement: " + std::string(mysql_stmt_error(stmt.get())));
@@ -68,7 +44,7 @@ bool ImageRepository::createImage(const Image& image) {
         }
         
         // 绑定参数
-        MYSQL_BIND bind[11];
+        MYSQL_BIND bind[10];
         memset(bind, 0, sizeof(bind));
         
         // image_id
@@ -76,23 +52,20 @@ bool ImageRepository::createImage(const Image& image) {
         bind[0].buffer = (char*)image.getImageId().c_str();
         bind[0].buffer_length = image.getImageId().length();
         
+        // post_id
+        int postId = image.getPostId();
+        bind[1].buffer_type = MYSQL_TYPE_LONG;
+        bind[1].buffer = &postId;
+        
+        // display_order
+        int displayOrder = image.getDisplayOrder();
+        bind[2].buffer_type = MYSQL_TYPE_LONG;
+        bind[2].buffer = &displayOrder;
+        
         // user_id
         int userId = image.getUserId();
-        bind[1].buffer_type = MYSQL_TYPE_LONG;
-        bind[1].buffer = &userId;
-        
-        // title
-        bind[2].buffer_type = MYSQL_TYPE_STRING;
-        bind[2].buffer = (char*)image.getTitle().c_str();
-        bind[2].buffer_length = image.getTitle().length();
-        
-        // description (可为空)
-        std::string description = image.getDescription();
-        bool description_is_null = description.empty();
-        bind[3].buffer_type = MYSQL_TYPE_STRING;
-        bind[3].buffer = (char*)description.c_str();
-        bind[3].buffer_length = description.length();
-        bind[3].is_null = &description_is_null;
+        bind[3].buffer_type = MYSQL_TYPE_LONG;
+        bind[3].buffer = &userId;
         
         // file_url
         bind[4].buffer_type = MYSQL_TYPE_STRING;
@@ -124,12 +97,6 @@ bool ImageRepository::createImage(const Image& image) {
         bind[9].buffer = (char*)image.getMimeType().c_str();
         bind[9].buffer_length = image.getMimeType().length();
         
-        // status
-        std::string status = Image::statusToString(image.getStatus());
-        bind[10].buffer_type = MYSQL_TYPE_STRING;
-        bind[10].buffer = (char*)status.c_str();
-        bind[10].buffer_length = status.length();
-        
         if (mysql_stmt_bind_param(stmt.get(), bind) != 0) {
             Logger::error("Failed to bind parameters: " + std::string(mysql_stmt_error(stmt.get())));
             return false;
@@ -149,34 +116,29 @@ bool ImageRepository::createImage(const Image& image) {
     }
 }
 
-// 从预编译语句构建 Image 对象
+// 从预编译语句构建 Image 对象（新字段结构）
 Image ImageRepository::buildImageFromStatement(void* stmtPtr) {
     MYSQL_STMT* stmt = static_cast<MYSQL_STMT*>(stmtPtr);
     Image image;
     
-    // 准备结果绑定
-    MYSQL_BIND result[17];
+    // 准备结果绑定（13个字段：id, image_id, post_id, display_order, user_id, file_url, thumbnail_url, file_size, width, height, mime_type, create_time, update_time）
+    MYSQL_BIND result[13];
     memset(result, 0, sizeof(result));
     
     // 定义变量存储结果
     long long id;
     char imageId[37] = {0};
+    int postId;
+    int displayOrder;
     long long userId;
-    char title[256] = {0};
-    char description[1024] = {0};
     char fileUrl[501] = {0};
     char thumbnailUrl[501] = {0};
     long long fileSize;
     int width, height;
     char mimeType[51] = {0};
-    int likeCount, favoriteCount, viewCount;
-    char status[20] = {0};
     MYSQL_TIME createTime, updateTime;
     
-    unsigned long imageId_length, title_length, description_length;
-    unsigned long fileUrl_length, thumbnailUrl_length, mimeType_length, status_length;
-    
-    bool description_is_null;
+    unsigned long imageId_length, fileUrl_length, thumbnailUrl_length, mimeType_length;
     
     // 绑定结果（按照 SELECT * 的顺序）
     int idx = 0;
@@ -193,24 +155,19 @@ Image ImageRepository::buildImageFromStatement(void* stmtPtr) {
     result[idx].length = &imageId_length;
     idx++;
     
+    // post_id
+    result[idx].buffer_type = MYSQL_TYPE_LONG;
+    result[idx].buffer = &postId;
+    idx++;
+    
+    // display_order
+    result[idx].buffer_type = MYSQL_TYPE_LONG;
+    result[idx].buffer = &displayOrder;
+    idx++;
+    
     // user_id
     result[idx].buffer_type = MYSQL_TYPE_LONGLONG;
     result[idx].buffer = &userId;
-    idx++;
-    
-    // title
-    result[idx].buffer_type = MYSQL_TYPE_STRING;
-    result[idx].buffer = title;
-    result[idx].buffer_length = sizeof(title);
-    result[idx].length = &title_length;
-    idx++;
-    
-    // description
-    result[idx].buffer_type = MYSQL_TYPE_STRING;
-    result[idx].buffer = description;
-    result[idx].buffer_length = sizeof(description);
-    result[idx].length = &description_length;
-    result[idx].is_null = &description_is_null;
     idx++;
     
     // file_url
@@ -249,28 +206,6 @@ Image ImageRepository::buildImageFromStatement(void* stmtPtr) {
     result[idx].length = &mimeType_length;
     idx++;
     
-    // like_count
-    result[idx].buffer_type = MYSQL_TYPE_LONG;
-    result[idx].buffer = &likeCount;
-    idx++;
-    
-    // favorite_count
-    result[idx].buffer_type = MYSQL_TYPE_LONG;
-    result[idx].buffer = &favoriteCount;
-    idx++;
-    
-    // view_count
-    result[idx].buffer_type = MYSQL_TYPE_LONG;
-    result[idx].buffer = &viewCount;
-    idx++;
-    
-    // status
-    result[idx].buffer_type = MYSQL_TYPE_STRING;
-    result[idx].buffer = status;
-    result[idx].buffer_length = sizeof(status);
-    result[idx].length = &status_length;
-    idx++;
-    
     // create_time
     result[idx].buffer_type = MYSQL_TYPE_TIMESTAMP;
     result[idx].buffer = &createTime;
@@ -291,23 +226,15 @@ Image ImageRepository::buildImageFromStatement(void* stmtPtr) {
     if (mysql_stmt_fetch(stmt) == 0) {
         image.setId(static_cast<int>(id));
         image.setImageId(std::string(imageId, imageId_length));
+        image.setPostId(postId);
+        image.setDisplayOrder(displayOrder);
         image.setUserId(static_cast<int>(userId));
-        image.setTitle(std::string(title, title_length));
-        
-        if (!description_is_null) {
-            image.setDescription(std::string(description, description_length));
-        }
-        
         image.setFileUrl(std::string(fileUrl, fileUrl_length));
         image.setThumbnailUrl(std::string(thumbnailUrl, thumbnailUrl_length));
         image.setFileSize(fileSize);
         image.setWidth(width);
         image.setHeight(height);
         image.setMimeType(std::string(mimeType, mimeType_length));
-        image.setLikeCount(likeCount);
-        image.setFavoriteCount(favoriteCount);
-        image.setViewCount(viewCount);
-        image.setStatus(Image::stringToStatus(std::string(status, status_length)));
         
         // 转换时间
         struct tm tm_create = {0};
@@ -342,7 +269,7 @@ std::optional<Image> ImageRepository::findByImageId(const std::string& imageId) 
         }
 
         MySQLStatement stmt(connGuard.get());
-        if (!stmt.get()) {
+        if (!stmt.isValid()) {
             return std::nullopt;
         }
 
@@ -385,7 +312,7 @@ std::optional<Image> ImageRepository::findByImageId(const std::string& imageId) 
     }
 }
 
-// 更新图片信息
+// 更新图片信息（只能更新display_order）
 bool ImageRepository::updateImage(const Image& image) {
     try {
         ConnectionGuard connGuard(DatabaseConnectionPool::getInstance());
@@ -395,11 +322,11 @@ bool ImageRepository::updateImage(const Image& image) {
         }
 
         MySQLStatement stmt(connGuard.get());
-        if (!stmt.get()) {
+        if (!stmt.isValid()) {
             return false;
         }
 
-        const char* query = "UPDATE images SET title = ?, description = ? WHERE image_id = ?";
+        const char* query = "UPDATE images SET display_order = ? WHERE image_id = ?";
 
         if (mysql_stmt_prepare(stmt.get(), query, strlen(query)) != 0) {
             Logger::error("Failed to prepare statement: " + std::string(mysql_stmt_error(stmt.get())));
@@ -407,26 +334,18 @@ bool ImageRepository::updateImage(const Image& image) {
         }
 
         // 绑定参数
-        MYSQL_BIND bind[3];
+        MYSQL_BIND bind[2];
         memset(bind, 0, sizeof(bind));
 
-        // title
-        bind[0].buffer_type = MYSQL_TYPE_STRING;
-        bind[0].buffer = (char*)image.getTitle().c_str();
-        bind[0].buffer_length = image.getTitle().length();
-
-        // description
-        std::string description = image.getDescription();
-        bool description_is_null = description.empty();
-        bind[1].buffer_type = MYSQL_TYPE_STRING;
-        bind[1].buffer = (char*)description.c_str();
-        bind[1].buffer_length = description.length();
-        bind[1].is_null = &description_is_null;
+        // display_order
+        int displayOrder = image.getDisplayOrder();
+        bind[0].buffer_type = MYSQL_TYPE_LONG;
+        bind[0].buffer = &displayOrder;
 
         // image_id
-        bind[2].buffer_type = MYSQL_TYPE_STRING;
-        bind[2].buffer = (char*)image.getImageId().c_str();
-        bind[2].buffer_length = image.getImageId().length();
+        bind[1].buffer_type = MYSQL_TYPE_STRING;
+        bind[1].buffer = (char*)image.getImageId().c_str();
+        bind[1].buffer_length = image.getImageId().length();
 
         if (mysql_stmt_bind_param(stmt.get(), bind) != 0) {
             Logger::error("Failed to bind parameters: " + std::string(mysql_stmt_error(stmt.get())));
@@ -457,7 +376,7 @@ bool ImageRepository::deleteImage(const std::string& imageId) {
         }
 
         MySQLStatement stmt(connGuard.get());
-        if (!stmt.get()) {
+        if (!stmt.isValid()) {
             return false;
         }
 
@@ -495,8 +414,8 @@ bool ImageRepository::deleteImage(const std::string& imageId) {
     }
 }
 
-// 获取最新图片列表（时间倒序）
-std::vector<Image> ImageRepository::getRecentImages(int page, int pageSize) {
+// 根据帖子ID查找图片列表
+std::vector<Image> ImageRepository::findByPostId(int postId) {
     std::vector<Image> images;
 
     try {
@@ -507,29 +426,23 @@ std::vector<Image> ImageRepository::getRecentImages(int page, int pageSize) {
         }
 
         MySQLStatement stmt(connGuard.get());
-        if (!stmt.get()) {
+        if (!stmt.isValid()) {
             return images;
         }
 
-        const char* query = "SELECT * FROM images WHERE status = 'APPROVED' ORDER BY create_time DESC LIMIT ? OFFSET ?";
+        const char* query = "SELECT * FROM images WHERE post_id = ? ORDER BY display_order";
 
         if (mysql_stmt_prepare(stmt.get(), query, strlen(query)) != 0) {
             Logger::error("Failed to prepare statement: " + std::string(mysql_stmt_error(stmt.get())));
             return images;
         }
 
-        // 计算OFFSET
-        int offset = (page - 1) * pageSize;
-
         // 绑定参数
-        MYSQL_BIND bind[2];
+        MYSQL_BIND bind[1];
         memset(bind, 0, sizeof(bind));
 
         bind[0].buffer_type = MYSQL_TYPE_LONG;
-        bind[0].buffer = &pageSize;
-
-        bind[1].buffer_type = MYSQL_TYPE_LONG;
-        bind[1].buffer = &offset;
+        bind[0].buffer = &postId;
 
         if (mysql_stmt_bind_param(stmt.get(), bind) != 0) {
             Logger::error("Failed to bind parameters: " + std::string(mysql_stmt_error(stmt.get())));
@@ -556,15 +469,19 @@ std::vector<Image> ImageRepository::getRecentImages(int page, int pageSize) {
         }
 
     } catch (const std::exception& e) {
-        Logger::error("Exception in getRecentImages: " + std::string(e.what()));
+        Logger::error("Exception in findByPostId: " + std::string(e.what()));
     }
 
     return images;
 }
 
-// 根据用户ID查找图片列表
-std::vector<Image> ImageRepository::findByUserId(int userId, int page, int pageSize) {
+// 批量根据帖子ID查找图片
+std::vector<Image> ImageRepository::findByPostIds(const std::vector<int>& postIds) {
     std::vector<Image> images;
+
+    if (postIds.empty()) {
+        return images;
+    }
 
     try {
         ConnectionGuard connGuard(DatabaseConnectionPool::getInstance());
@@ -573,35 +490,41 @@ std::vector<Image> ImageRepository::findByUserId(int userId, int page, int pageS
             return images;
         }
 
+        // 构建IN子句
+        std::ostringstream queryStream;
+        queryStream << "SELECT * FROM images WHERE post_id IN (";
+        for (size_t i = 0; i < postIds.size(); ++i) {
+            if (i > 0) queryStream << ",";
+            queryStream << "?";
+        }
+        queryStream << ") ORDER BY post_id, display_order";
+
+        std::string queryStr = queryStream.str();
+        const char* query = queryStr.c_str();
+
         MySQLStatement stmt(connGuard.get());
-        if (!stmt.get()) {
+        if (!stmt.isValid()) {
             return images;
         }
-
-        const char* query = "SELECT * FROM images WHERE user_id = ? ORDER BY create_time DESC LIMIT ? OFFSET ?";
 
         if (mysql_stmt_prepare(stmt.get(), query, strlen(query)) != 0) {
             Logger::error("Failed to prepare statement: " + std::string(mysql_stmt_error(stmt.get())));
             return images;
         }
 
-        // 计算OFFSET
-        int offset = (page - 1) * pageSize;
-
         // 绑定参数
-        MYSQL_BIND bind[3];
-        memset(bind, 0, sizeof(bind));
+        std::vector<MYSQL_BIND> bind(postIds.size());
+        memset(bind.data(), 0, sizeof(MYSQL_BIND) * postIds.size());
 
-        bind[0].buffer_type = MYSQL_TYPE_LONG;
-        bind[0].buffer = &userId;
+        // 需要保持postIds的副本，因为bind需要指向稳定的内存地址
+        std::vector<int> postIdsCopy = postIds;
 
-        bind[1].buffer_type = MYSQL_TYPE_LONG;
-        bind[1].buffer = &pageSize;
+        for (size_t i = 0; i < postIdsCopy.size(); ++i) {
+            bind[i].buffer_type = MYSQL_TYPE_LONG;
+            bind[i].buffer = &postIdsCopy[i];
+        }
 
-        bind[2].buffer_type = MYSQL_TYPE_LONG;
-        bind[2].buffer = &offset;
-
-        if (mysql_stmt_bind_param(stmt.get(), bind) != 0) {
+        if (mysql_stmt_bind_param(stmt.get(), bind.data()) != 0) {
             Logger::error("Failed to bind parameters: " + std::string(mysql_stmt_error(stmt.get())));
             return images;
         }
@@ -626,14 +549,14 @@ std::vector<Image> ImageRepository::findByUserId(int userId, int page, int pageS
         }
 
     } catch (const std::exception& e) {
-        Logger::error("Exception in findByUserId: " + std::string(e.what()));
+        Logger::error("Exception in findByPostIds: " + std::string(e.what()));
     }
 
     return images;
 }
 
-// 增加浏览数
-bool ImageRepository::incrementViewCount(const std::string& imageId) {
+// 删除帖子的所有图片
+bool ImageRepository::deleteByPostId(int postId) {
     try {
         ConnectionGuard connGuard(DatabaseConnectionPool::getInstance());
         if (!connGuard.isValid()) {
@@ -642,11 +565,11 @@ bool ImageRepository::incrementViewCount(const std::string& imageId) {
         }
 
         MySQLStatement stmt(connGuard.get());
-        if (!stmt.get()) {
+        if (!stmt.isValid()) {
             return false;
         }
 
-        const char* query = "UPDATE images SET view_count = view_count + 1 WHERE image_id = ?";
+        const char* query = "DELETE FROM images WHERE post_id = ?";
 
         if (mysql_stmt_prepare(stmt.get(), query, strlen(query)) != 0) {
             Logger::error("Failed to prepare statement: " + std::string(mysql_stmt_error(stmt.get())));
@@ -657,9 +580,8 @@ bool ImageRepository::incrementViewCount(const std::string& imageId) {
         MYSQL_BIND bind[1];
         memset(bind, 0, sizeof(bind));
 
-        bind[0].buffer_type = MYSQL_TYPE_STRING;
-        bind[0].buffer = (char*)imageId.c_str();
-        bind[0].buffer_length = imageId.length();
+        bind[0].buffer_type = MYSQL_TYPE_LONG;
+        bind[0].buffer = &postId;
 
         if (mysql_stmt_bind_param(stmt.get(), bind) != 0) {
             Logger::error("Failed to bind parameters: " + std::string(mysql_stmt_error(stmt.get())));
@@ -671,16 +593,17 @@ bool ImageRepository::incrementViewCount(const std::string& imageId) {
             return false;
         }
 
+        Logger::info("Images deleted successfully for post_id: " + std::to_string(postId));
         return true;
 
     } catch (const std::exception& e) {
-        Logger::error("Exception in incrementViewCount: " + std::string(e.what()));
+        Logger::error("Exception in deleteByPostId: " + std::string(e.what()));
         return false;
     }
 }
 
-// 获取图片总数
-int ImageRepository::getTotalCount() {
+// 获取帖子的图片数量
+int ImageRepository::getImageCountByPostId(int postId) {
     try {
         ConnectionGuard connGuard(DatabaseConnectionPool::getInstance());
         if (!connGuard.isValid()) {
@@ -689,14 +612,26 @@ int ImageRepository::getTotalCount() {
         }
 
         MySQLStatement stmt(connGuard.get());
-        if (!stmt.get()) {
+        if (!stmt.isValid()) {
             return 0;
         }
 
-        const char* query = "SELECT COUNT(*) FROM images WHERE status = 'APPROVED'";
+        const char* query = "SELECT COUNT(*) FROM images WHERE post_id = ?";
 
         if (mysql_stmt_prepare(stmt.get(), query, strlen(query)) != 0) {
             Logger::error("Failed to prepare statement: " + std::string(mysql_stmt_error(stmt.get())));
+            return 0;
+        }
+
+        // 绑定参数
+        MYSQL_BIND bind[1];
+        memset(bind, 0, sizeof(bind));
+
+        bind[0].buffer_type = MYSQL_TYPE_LONG;
+        bind[0].buffer = &postId;
+
+        if (mysql_stmt_bind_param(stmt.get(), bind) != 0) {
+            Logger::error("Failed to bind parameters: " + std::string(mysql_stmt_error(stmt.get())));
             return 0;
         }
 
@@ -725,8 +660,9 @@ int ImageRepository::getTotalCount() {
         return 0;
 
     } catch (const std::exception& e) {
-        Logger::error("Exception in getTotalCount: " + std::string(e.what()));
+        Logger::error("Exception in getImageCountByPostId: " + std::string(e.what()));
         return 0;
     }
 }
+
 

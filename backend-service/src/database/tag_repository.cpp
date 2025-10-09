@@ -207,8 +207,8 @@ bool TagRepository::createTag(const Tag& tag) {
     }
 }
 
-// 关联图片和标签
-bool TagRepository::linkImageTag(int imageId, int tagId) {
+// 关联帖子和标签
+bool TagRepository::linkPostTag(int postId, int tagId) {
     try {
         ConnectionGuard connGuard(DatabaseConnectionPool::getInstance());
         if (!connGuard.isValid()) {
@@ -220,46 +220,52 @@ bool TagRepository::linkImageTag(int imageId, int tagId) {
         if (!stmt.get()) {
             return false;
         }
-        
-        const char* query = "INSERT INTO image_tags (image_id, tag_id) VALUES (?, ?)";
-        
+
+        const char* query = "INSERT INTO post_tags (post_id, tag_id) VALUES (?, ?)";
+
         if (mysql_stmt_prepare(stmt.get(), query, strlen(query)) != 0) {
             Logger::error("Failed to prepare statement: " + std::string(mysql_stmt_error(stmt.get())));
             return false;
         }
-        
+
         // 绑定参数
         MYSQL_BIND bind[2];
         memset(bind, 0, sizeof(bind));
-        
+
         bind[0].buffer_type = MYSQL_TYPE_LONG;
-        bind[0].buffer = &imageId;
-        
+        bind[0].buffer = &postId;
+
         bind[1].buffer_type = MYSQL_TYPE_LONG;
         bind[1].buffer = &tagId;
-        
+
         if (mysql_stmt_bind_param(stmt.get(), bind) != 0) {
             Logger::error("Failed to bind parameters: " + std::string(mysql_stmt_error(stmt.get())));
             return false;
         }
-        
+
         if (mysql_stmt_execute(stmt.get()) != 0) {
             Logger::error("Failed to execute statement: " + std::string(mysql_stmt_error(stmt.get())));
             return false;
         }
-        
+
         return true;
-        
+
     } catch (const std::exception& e) {
-        Logger::error("Exception in linkImageTag: " + std::string(e.what()));
+        Logger::error("Exception in linkPostTag: " + std::string(e.what()));
         return false;
     }
 }
 
-// 获取图片的所有标签
-std::vector<Tag> TagRepository::getImageTags(int imageId) {
+// 关联图片和标签（已废弃，保留用于兼容）
+bool TagRepository::linkImageTag(int imageId, int tagId) {
+    Logger::warning("linkImageTag is deprecated, use linkPostTag instead");
+    return linkPostTag(imageId, tagId);  // 暂时转发到linkPostTag
+}
+
+// 获取帖子的所有标签
+std::vector<Tag> TagRepository::getPostTags(int postId) {
     std::vector<Tag> tags;
-    
+
     try {
         ConnectionGuard connGuard(DatabaseConnectionPool::getInstance());
         if (!connGuard.isValid()) {
@@ -271,31 +277,31 @@ std::vector<Tag> TagRepository::getImageTags(int imageId) {
         if (!stmt.get()) {
             return tags;
         }
-        
-        const char* query = "SELECT t.* FROM tags t INNER JOIN image_tags it ON t.id = it.tag_id WHERE it.image_id = ?";
-        
+
+        const char* query = "SELECT t.* FROM tags t INNER JOIN post_tags pt ON t.id = pt.tag_id WHERE pt.post_id = ?";
+
         if (mysql_stmt_prepare(stmt.get(), query, strlen(query)) != 0) {
             Logger::error("Failed to prepare statement: " + std::string(mysql_stmt_error(stmt.get())));
             return tags;
         }
-        
+
         // 绑定参数
         MYSQL_BIND bind[1];
         memset(bind, 0, sizeof(bind));
-        
+
         bind[0].buffer_type = MYSQL_TYPE_LONG;
-        bind[0].buffer = &imageId;
-        
+        bind[0].buffer = &postId;
+
         if (mysql_stmt_bind_param(stmt.get(), bind) != 0) {
             Logger::error("Failed to bind parameters: " + std::string(mysql_stmt_error(stmt.get())));
             return tags;
         }
-        
+
         if (mysql_stmt_execute(stmt.get()) != 0) {
             Logger::error("Failed to execute statement: " + std::string(mysql_stmt_error(stmt.get())));
             return tags;
         }
-        
+
         // 获取所有结果
         while (true) {
             Tag tag = buildTagFromStatement(stmt.get());
@@ -309,12 +315,18 @@ std::vector<Tag> TagRepository::getImageTags(int imageId) {
                 break;
             }
         }
-        
+
     } catch (const std::exception& e) {
-        Logger::error("Exception in getImageTags: " + std::string(e.what()));
+        Logger::error("Exception in getPostTags: " + std::string(e.what()));
     }
-    
+
     return tags;
+}
+
+// 获取图片的所有标签（已废弃，保留用于兼容）
+std::vector<Tag> TagRepository::getImageTags(int imageId) {
+    Logger::warning("getImageTags is deprecated, use getPostTags instead");
+    return getPostTags(imageId);  // 暂时转发到getPostTags
 }
 
 // 增加标签使用次数

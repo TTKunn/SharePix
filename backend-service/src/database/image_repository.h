@@ -58,34 +58,32 @@ public:
     bool deleteImage(const std::string& imageId);
     
     /**
-     * @brief 获取最新图片列表（时间倒序）
-     * @param page 页码（从1开始）
-     * @param pageSize 每页数量
-     * @return 图片列表
+     * @brief 根据帖子ID查找图片列表
+     * @param postId 帖子物理ID
+     * @return 图片列表（按display_order排序）
      */
-    std::vector<Image> getRecentImages(int page, int pageSize);
-    
+    std::vector<Image> findByPostId(int postId);
+
     /**
-     * @brief 根据用户ID查找图片列表
-     * @param userId 用户ID
-     * @param page 页码（从1开始）
-     * @param pageSize 每页数量
-     * @return 图片列表
+     * @brief 批量根据帖子ID查找图片
+     * @param postIds 帖子物理ID列表
+     * @return 图片列表（按post_id和display_order排序）
      */
-    std::vector<Image> findByUserId(int userId, int page, int pageSize);
-    
+    std::vector<Image> findByPostIds(const std::vector<int>& postIds);
+
     /**
-     * @brief 增加浏览数
-     * @param imageId 业务逻辑ID
+     * @brief 删除帖子的所有图片
+     * @param postId 帖子物理ID
      * @return 成功返回true，失败返回false
      */
-    bool incrementViewCount(const std::string& imageId);
-    
+    bool deleteByPostId(int postId);
+
     /**
-     * @brief 获取图片总数
-     * @return 图片总数
+     * @brief 获取帖子的图片数量
+     * @param postId 帖子物理ID
+     * @return 图片数量
      */
-    int getTotalCount();
+    int getImageCountByPostId(int postId);
 
 private:
     /**

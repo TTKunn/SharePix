@@ -44,17 +44,34 @@ public:
     bool createTag(const Tag& tag);
     
     /**
-     * @brief 关联图片和标签
-     * @param imageId 图片物理ID
+     * @brief 关联帖子和标签
+     * @param postId 帖子物理ID
      * @param tagId 标签物理ID
      * @return 成功返回true，失败返回false
      */
-    bool linkImageTag(int imageId, int tagId);
-    
+    bool linkPostTag(int postId, int tagId);
+
     /**
-     * @brief 获取图片的所有标签
+     * @brief 获取帖子的所有标签
+     * @param postId 帖子物理ID
+     * @return 标签列表
+     */
+    std::vector<Tag> getPostTags(int postId);
+
+    /**
+     * @brief 关联图片和标签（已废弃，保留用于兼容）
+     * @param imageId 图片物理ID
+     * @param tagId 标签物理ID
+     * @return 成功返回true，失败返回false
+     * @deprecated 使用linkPostTag代替
+     */
+    bool linkImageTag(int imageId, int tagId);
+
+    /**
+     * @brief 获取图片的所有标签（已废弃，保留用于兼容）
      * @param imageId 图片物理ID
      * @return 标签列表
+     * @deprecated 使用getPostTags代替
      */
     std::vector<Tag> getImageTags(int imageId);
     

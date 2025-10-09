@@ -1,0 +1,290 @@
+Date : 2025-10-07 21:31:59
+Directory : /home/kun/projects/Knot
+Total : 178 files,  48594 codes, 6970 comments, 9361 blanks, all 64925 lines
+
+Languages
++--------------+------------+------------+------------+------------+------------+
+| language     | files      | code       | comment    | blank      | total      |
++--------------+------------+------------+------------+------------+------------+
+| C++          |         85 |     36,633 |      6,841 |      6,638 |     50,112 |
+| Markdown     |         27 |      8,023 |          0 |      2,249 |     10,272 |
+| YAML         |         29 |      2,037 |         16 |        164 |      2,217 |
+| Shell Script |          8 |        668 |         87 |        149 |        904 |
+| JSON         |         14 |        459 |          0 |          8 |        467 |
+| CMake        |          8 |        428 |          0 |         92 |        520 |
+| HTML         |          1 |        180 |          0 |         28 |        208 |
+| MS SQL       |          2 |         92 |         26 |         26 |        144 |
+| XML          |          3 |         53 |          0 |          1 |         54 |
+| PostCSS      |          1 |         21 |          0 |          6 |         27 |
++--------------+------------+------------+------------+------------+------------+
+
+Directories
++----------------------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                                                                                       | files      | code       | comment    | blank      | total      |
++----------------------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                                                                                          |        178 |     48,594 |      6,970 |      9,361 |     64,925 |
+| . (Files)                                                                                                                  |          2 |      1,156 |          0 |        271 |      1,427 |
+| .augment                                                                                                                   |          1 |         87 |          0 |         28 |        115 |
+| .augment/rules                                                                                                             |          1 |         87 |          0 |         28 |        115 |
+| .claude                                                                                                                    |          1 |         21 |          0 |          1 |         22 |
+| backend-service                                                                                                            |        166 |     47,178 |      6,970 |      9,031 |     63,179 |
+| backend-service (Files)                                                                                                    |          3 |        676 |         14 |        147 |        837 |
+| backend-service/.augment                                                                                                   |          1 |         85 |          0 |         27 |        112 |
+| backend-service/.augment/rules                                                                                             |          1 |         85 |          0 |         27 |        112 |
+| backend-service/config                                                                                                     |          4 |        204 |         26 |         30 |        260 |
+| backend-service/docs                                                                                                       |         12 |      2,275 |         68 |        468 |      2,811 |
+| backend-service/project_document                                                                                           |          9 |      4,966 |          0 |      1,332 |      6,298 |
+| backend-service/src                                                                                                        |         35 |      3,521 |      1,638 |      1,096 |      6,255 |
+| backend-service/src (Files)                                                                                                |          1 |         94 |         36 |         28 |        158 |
+| backend-service/src/api                                                                                                    |          4 |        488 |        245 |        156 |        889 |
+| backend-service/src/database                                                                                               |         10 |      1,458 |        601 |        462 |      2,521 |
+| backend-service/src/models                                                                                                 |          6 |        496 |        213 |        142 |        851 |
+| backend-service/src/security                                                                                               |          4 |        256 |        172 |         84 |        512 |
+| backend-service/src/server                                                                                                 |          2 |        189 |         78 |         68 |        335 |
+| backend-service/src/utils                                                                                                  |          8 |        540 |        293 |        156 |        989 |
+| backend-service/test                                                                                                       |          1 |         49 |          7 |         15 |         71 |
+| backend-service/third_party                                                                                                |        101 |     35,402 |      5,217 |      5,916 |     46,535 |
+| backend-service/third_party (Files)                                                                                        |          4 |     24,866 |      3,102 |      4,289 |     32,257 |
+| backend-service/third_party/jwt-cpp                                                                                        |         97 |     10,536 |      2,115 |      1,627 |     14,278 |
+| backend-service/third_party/jwt-cpp (Files)                                                                                |          3 |        279 |          0 |         79 |        358 |
+| backend-service/third_party/jwt-cpp/.github                                                                                |         30 |      1,303 |         14 |        150 |      1,467 |
+| backend-service/third_party/jwt-cpp/.github (Files)                                                                        |          3 |         31 |          0 |         10 |         41 |
+| backend-service/third_party/jwt-cpp/.github/ISSUE_TEMPLATE                                                                 |          3 |        122 |          1 |          4 |        127 |
+| backend-service/third_party/jwt-cpp/.github/actions                                                                        |         15 |        382 |          8 |         25 |        415 |
+| backend-service/third_party/jwt-cpp/.github/actions/badge                                                                  |          2 |         55 |          0 |          2 |         57 |
+| backend-service/third_party/jwt-cpp/.github/actions/badge (Files)                                                          |          1 |         31 |          0 |          1 |         32 |
+| backend-service/third_party/jwt-cpp/.github/actions/badge/write                                                            |          1 |         24 |          0 |          1 |         25 |
+| backend-service/third_party/jwt-cpp/.github/actions/install                                                                |         10 |        204 |          4 |         10 |        218 |
+| backend-service/third_party/jwt-cpp/.github/actions/install/boost-json                                                     |          1 |         17 |          0 |          1 |         18 |
+| backend-service/third_party/jwt-cpp/.github/actions/install/cmake                                                          |          1 |         36 |          3 |          1 |         40 |
+| backend-service/third_party/jwt-cpp/.github/actions/install/danielaparker-jsoncons                                         |          1 |         18 |          0 |          1 |         19 |
+| backend-service/third_party/jwt-cpp/.github/actions/install/gtest                                                          |          1 |         15 |          0 |          1 |         16 |
+| backend-service/third_party/jwt-cpp/.github/actions/install/kazuho-picojson                                                |          1 |         17 |          0 |          1 |         18 |
+| backend-service/third_party/jwt-cpp/.github/actions/install/libressl                                                       |          1 |         19 |          0 |          1 |         20 |
+| backend-service/third_party/jwt-cpp/.github/actions/install/nlohmann-json                                                  |          1 |         18 |          0 |          1 |         19 |
+| backend-service/third_party/jwt-cpp/.github/actions/install/open-source-parsers-jsoncpp                                    |          1 |         21 |          1 |          1 |         23 |
+| backend-service/third_party/jwt-cpp/.github/actions/install/openssl                                                        |          1 |         21 |          0 |          1 |         22 |
+| backend-service/third_party/jwt-cpp/.github/actions/install/wolfssl                                                        |          1 |         22 |          0 |          1 |         23 |
+| backend-service/third_party/jwt-cpp/.github/actions/process-linting-results                                                |          1 |         21 |          4 |          2 |         27 |
+| backend-service/third_party/jwt-cpp/.github/actions/render                                                                 |          2 |        102 |          0 |         11 |        113 |
+| backend-service/third_party/jwt-cpp/.github/actions/render/defaults                                                        |          1 |         61 |          0 |          7 |         68 |
+| backend-service/third_party/jwt-cpp/.github/actions/render/tests                                                           |          1 |         41 |          0 |          4 |         45 |
+| backend-service/third_party/jwt-cpp/.github/workflows                                                                      |          9 |        768 |          5 |        111 |        884 |
+| backend-service/third_party/jwt-cpp/cmake                                                                                  |          1 |         48 |          0 |          0 |         48 |
+| backend-service/third_party/jwt-cpp/docs                                                                                   |          7 |        283 |          0 |        102 |        385 |
+| backend-service/third_party/jwt-cpp/example                                                                                |         16 |        639 |         26 |        124 |        789 |
+| backend-service/third_party/jwt-cpp/example (Files)                                                                        |          9 |        407 |         25 |         68 |        500 |
+| backend-service/third_party/jwt-cpp/example/traits                                                                         |          7 |        232 |          1 |         56 |        289 |
+| backend-service/third_party/jwt-cpp/include                                                                                |         13 |      4,279 |      2,029 |        594 |      6,902 |
+| backend-service/third_party/jwt-cpp/include/jwt-cpp                                                                        |         12 |      3,199 |      1,996 |        506 |      5,701 |
+| backend-service/third_party/jwt-cpp/include/jwt-cpp (Files)                                                                |          2 |      2,557 |      1,727 |        330 |      4,614 |
+| backend-service/third_party/jwt-cpp/include/jwt-cpp/traits                                                                 |         10 |        642 |        269 |        176 |      1,087 |
+| backend-service/third_party/jwt-cpp/include/jwt-cpp/traits/boost-json                                                      |          2 |         96 |         53 |         28 |        177 |
+| backend-service/third_party/jwt-cpp/include/jwt-cpp/traits/danielaparker-jsoncons                                          |          2 |        214 |         56 |         62 |        332 |
+| backend-service/third_party/jwt-cpp/include/jwt-cpp/traits/kazuho-picojson                                                 |          2 |         91 |         52 |         26 |        169 |
+| backend-service/third_party/jwt-cpp/include/jwt-cpp/traits/nlohmann-json                                                   |          2 |         94 |         53 |         27 |        174 |
+| backend-service/third_party/jwt-cpp/include/jwt-cpp/traits/open-source-parsers-jsoncpp                                     |          2 |        147 |         55 |         33 |        235 |
+| backend-service/third_party/jwt-cpp/include/picojson                                                                       |          1 |      1,080 |         33 |         88 |      1,201 |
+| backend-service/third_party/jwt-cpp/nuget                                                                                  |          2 |         37 |          0 |          1 |         38 |
+| backend-service/third_party/jwt-cpp/tests                                                                                  |         25 |      3,668 |         46 |        577 |      4,291 |
+| backend-service/third_party/jwt-cpp/tests (Files)                                                                          |         11 |      3,080 |         39 |        443 |      3,562 |
+| backend-service/third_party/jwt-cpp/tests/cmake                                                                            |          6 |         50 |          1 |         21 |         72 |
+| backend-service/third_party/jwt-cpp/tests/fuzz                                                                             |          4 |         54 |          6 |         17 |         77 |
+| backend-service/third_party/jwt-cpp/tests/traits                                                                           |          4 |        484 |          0 |         96 |        580 |
+| entry                                                                                                                      |          7 |         67 |          0 |          3 |         70 |
+| entry/src                                                                                                                  |          7 |         67 |          0 |          3 |         70 |
+| entry/src/main                                                                                                             |          7 |         67 |          0 |          3 |         70 |
+| entry/src/main/resources                                                                                                   |          7 |         67 |          0 |          3 |         70 |
+| entry/src/main/resources/base                                                                                              |          6 |         59 |          0 |          3 |         62 |
+| entry/src/main/resources/base/element                                                                                      |          3 |         44 |          0 |          2 |         46 |
+| entry/src/main/resources/base/media                                                                                        |          1 |          7 |          0 |          0 |          7 |
+| entry/src/main/resources/base/profile                                                                                      |          2 |          8 |          0 |          1 |          9 |
+| entry/src/main/resources/dark                                                                                              |          1 |          8 |          0 |          0 |          8 |
+| entry/src/main/resources/dark/element                                                                                      |          1 |          8 |          0 |          0 |          8 |
+| rules                                                                                                                      |          1 |         85 |          0 |         27 |        112 |
++----------------------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++----------------------------------------------------------------------------------------------------------------------------+--------------+------------+------------+------------+------------+
+| filename                                                                                                                   | language     | code       | comment    | blank      | total      |
++----------------------------------------------------------------------------------------------------------------------------+--------------+------------+------------+------------+------------+
+| /home/kun/projects/Knot/.augment/rules/rules.md                                                                            | Markdown     |         87 |          0 |         28 |        115 |
+| /home/kun/projects/Knot/.claude/settings.local.json                                                                        | JSON         |         21 |          0 |          1 |         22 |
+| /home/kun/projects/Knot/CLAUDE.md                                                                                          | Markdown     |        230 |          0 |         83 |        313 |
+| /home/kun/projects/Knot/backend-service/.augment/rules/rules.md                                                            | Markdown     |         85 |          0 |         27 |        112 |
+| /home/kun/projects/Knot/backend-service/CMakeLists.txt                                                                     | CMake        |        102 |          0 |         22 |        124 |
+| /home/kun/projects/Knot/backend-service/README.md                                                                          | Markdown     |        516 |          0 |        109 |        625 |
+| /home/kun/projects/Knot/backend-service/config/config.cloud.json                                                           | JSON         |         56 |          0 |          2 |         58 |
+| /home/kun/projects/Knot/backend-service/config/config.example.json                                                         | JSON         |         56 |          0 |          2 |         58 |
+| /home/kun/projects/Knot/backend-service/config/database.sql                                                                | MS SQL       |         87 |         19 |         19 |        125 |
+| /home/kun/projects/Knot/backend-service/config/setup_remote_access.sql                                                     | MS SQL       |          5 |          7 |          7 |         19 |
+| /home/kun/projects/Knot/backend-service/docs/DEPLOYMENT.md                                                                 | Markdown     |        234 |          0 |         87 |        321 |
+| /home/kun/projects/Knot/backend-service/docs/FIREWALL-SETUP.md                                                             | Markdown     |        191 |          0 |         79 |        270 |
+| /home/kun/projects/Knot/backend-service/docs/QUICKSTART.md                                                                 | Markdown     |        194 |          0 |         64 |        258 |
+| /home/kun/projects/Knot/backend-service/docs/README.md                                                                     | Markdown     |        152 |          0 |         69 |        221 |
+| /home/kun/projects/Knot/backend-service/docs/check-status.sh                                                               | Shell Script |         75 |          9 |         12 |         96 |
+| /home/kun/projects/Knot/backend-service/docs/index.html                                                                    | HTML         |        180 |          0 |         28 |        208 |
+| /home/kun/projects/Knot/backend-service/docs/open-firewall.sh                                                              | Shell Script |        132 |         23 |         40 |        195 |
+| /home/kun/projects/Knot/backend-service/docs/openapi.yaml                                                                  | YAML         |        763 |          2 |         23 |        788 |
+| /home/kun/projects/Knot/backend-service/docs/serve.sh                                                                      | Shell Script |         23 |          4 |          6 |         33 |
+| /home/kun/projects/Knot/backend-service/docs/start-docs.sh                                                                 | Shell Script |        108 |         12 |         13 |        133 |
+| /home/kun/projects/Knot/backend-service/docs/test-network.sh                                                               | Shell Script |        116 |          8 |         23 |        147 |
+| /home/kun/projects/Knot/backend-service/docs/verify-firewall.sh                                                            | Shell Script |        107 |         10 |         24 |        141 |
+| /home/kun/projects/Knot/backend-service/project_document/README.md                                                         | Markdown     |        515 |          0 |        159 |        674 |
+| /home/kun/projects/Knot/backend-service/project_document/[000]API文档.md                                                     | Markdown     |        698 |          0 |        202 |        900 |
+| /home/kun/projects/Knot/backend-service/project_document/[001]项目架构文档.md                                                    | Markdown     |        383 |          0 |        105 |        488 |
+| /home/kun/projects/Knot/backend-service/project_document/[002]环境安装配置教程.md                                                  | Markdown     |        276 |          0 |         70 |        346 |
+| /home/kun/projects/Knot/backend-service/project_document/[100]阶段A-基础模块实现.md                                                | Markdown     |      1,226 |          0 |        279 |      1,505 |
+| /home/kun/projects/Knot/backend-service/project_document/[101]阶段B-用户认证模块.md                                                | Markdown     |        574 |          0 |        132 |        706 |
+| /home/kun/projects/Knot/backend-service/project_document/[102]阶段C-图片管理模块.md                                                | Markdown     |        529 |          0 |        138 |        667 |
+| /home/kun/projects/Knot/backend-service/project_document/[200]数据库设计文档.md                                                   | Markdown     |        353 |          0 |        120 |        473 |
+| /home/kun/projects/Knot/backend-service/project_document/[201]性能优化专题.md                                                    | Markdown     |        412 |          0 |        127 |        539 |
+| /home/kun/projects/Knot/backend-service/src/api/auth_handler.cpp                                                           | C++          |        183 |         46 |         54 |        283 |
+| /home/kun/projects/Knot/backend-service/src/api/auth_handler.h                                                             | C++          |         25 |         69 |         17 |        111 |
+| /home/kun/projects/Knot/backend-service/src/api/image_handler.cpp                                                          | C++          |        253 |         49 |         66 |        368 |
+| /home/kun/projects/Knot/backend-service/src/api/image_handler.h                                                            | C++          |         27 |         81 |         19 |        127 |
+| /home/kun/projects/Knot/backend-service/src/database/connection_guard.cpp                                                  | C++          |         25 |         31 |         14 |         70 |
+| /home/kun/projects/Knot/backend-service/src/database/connection_guard.h                                                    | C++          |         18 |         99 |         15 |        132 |
+| /home/kun/projects/Knot/backend-service/src/database/connection_pool.cpp                                                   | C++          |        162 |         28 |         50 |        240 |
+| /home/kun/projects/Knot/backend-service/src/database/connection_pool.h                                                     | C++          |         45 |         66 |         22 |        133 |
+| /home/kun/projects/Knot/backend-service/src/database/image_repository.cpp                                                  | C++          |        519 |         71 |        143 |        733 |
+| /home/kun/projects/Knot/backend-service/src/database/image_repository.h                                                    | C++          |         20 |         64 |         15 |         99 |
+| /home/kun/projects/Knot/backend-service/src/database/tag_repository.cpp                                                    | C++          |        261 |         28 |         77 |        366 |
+| /home/kun/projects/Knot/backend-service/src/database/tag_repository.h                                                      | C++          |         17 |         48 |         12 |         77 |
+| /home/kun/projects/Knot/backend-service/src/database/user_repository.cpp                                                   | C++          |        369 |         72 |         96 |        537 |
+| /home/kun/projects/Knot/backend-service/src/database/user_repository.h                                                     | C++          |         22 |         94 |         18 |        134 |
+| /home/kun/projects/Knot/backend-service/src/main.cpp                                                                       | C++          |         94 |         36 |         28 |        158 |
+| /home/kun/projects/Knot/backend-service/src/models/image.cpp                                                               | C++          |        129 |         17 |         35 |        181 |
+| /home/kun/projects/Knot/backend-service/src/models/image.h                                                                 | C++          |         73 |         56 |         17 |        146 |
+| /home/kun/projects/Knot/backend-service/src/models/tag.cpp                                                                 | C++          |         40 |         12 |         17 |         69 |
+| /home/kun/projects/Knot/backend-service/src/models/tag.h                                                                   | C++          |         27 |         38 |         14 |         79 |
+| /home/kun/projects/Knot/backend-service/src/models/user.cpp                                                                | C++          |        157 |         22 |         40 |        219 |
+| /home/kun/projects/Knot/backend-service/src/models/user.h                                                                  | C++          |         70 |         68 |         19 |        157 |
+| /home/kun/projects/Knot/backend-service/src/security/jwt_manager.cpp                                                       | C++          |        104 |         24 |         28 |        156 |
+| /home/kun/projects/Knot/backend-service/src/security/jwt_manager.h                                                         | C++          |         18 |         64 |         12 |         94 |
+| /home/kun/projects/Knot/backend-service/src/security/password_hasher.cpp                                                   | C++          |        118 |         28 |         34 |        180 |
+| /home/kun/projects/Knot/backend-service/src/security/password_hasher.h                                                     | C++          |         16 |         56 |         10 |         82 |
+| /home/kun/projects/Knot/backend-service/src/server/http_server.cpp                                                         | C++          |        161 |         29 |         51 |        241 |
+| /home/kun/projects/Knot/backend-service/src/server/http_server.h                                                           | C++          |         28 |         49 |         17 |         94 |
+| /home/kun/projects/Knot/backend-service/src/utils/config_manager.cpp                                                       | C++          |         83 |         13 |         18 |        114 |
+| /home/kun/projects/Knot/backend-service/src/utils/config_manager.h                                                         | C++          |         21 |         39 |         12 |         72 |
+| /home/kun/projects/Knot/backend-service/src/utils/id_generator.cpp                                                         | C++          |         58 |         22 |         24 |        104 |
+| /home/kun/projects/Knot/backend-service/src/utils/id_generator.h                                                           | C++          |         14 |         38 |          8 |         60 |
+| /home/kun/projects/Knot/backend-service/src/utils/image_processor.cpp                                                      | C++          |        130 |         34 |         38 |        202 |
+| /home/kun/projects/Knot/backend-service/src/utils/image_processor.h                                                        | C++          |         33 |         58 |         13 |        104 |
+| /home/kun/projects/Knot/backend-service/src/utils/logger.cpp                                                               | C++          |        167 |         28 |         27 |        222 |
+| /home/kun/projects/Knot/backend-service/src/utils/logger.h                                                                 | C++          |         34 |         61 |         16 |        111 |
+| /home/kun/projects/Knot/backend-service/start-server.sh                                                                    | Shell Script |         58 |         14 |         16 |         88 |
+| /home/kun/projects/Knot/backend-service/test/test_concurrent.sh                                                            | Shell Script |         49 |          7 |         15 |         71 |
+| /home/kun/projects/Knot/backend-service/third_party/httplib.h                                                              | C++          |      9,545 |        501 |      1,866 |     11,912 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/.github/FUNDING.yml                                            | YAML         |          2 |          0 |          1 |          3 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/.github/ISSUE_TEMPLATE/bug-report.yml                          | YAML         |         82 |          1 |          2 |         85 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/.github/ISSUE_TEMPLATE/feature-request.yml                     | YAML         |         20 |          0 |          1 |         21 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/.github/ISSUE_TEMPLATE/support-question.yml                    | YAML         |         20 |          0 |          1 |         21 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/.github/actions/badge/action.yml                               | YAML         |         31 |          0 |          1 |         32 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/.github/actions/badge/write/action.yml                         | YAML         |         24 |          0 |          1 |         25 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/.github/actions/install/boost-json/action.yml                  | YAML         |         17 |          0 |          1 |         18 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/.github/actions/install/cmake/action.yml                       | YAML         |         36 |          3 |          1 |         40 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/.github/actions/install/danielaparker-jsoncons/action.yml      | YAML         |         18 |          0 |          1 |         19 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/.github/actions/install/gtest/action.yml                       | YAML         |         15 |          0 |          1 |         16 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/.github/actions/install/kazuho-picojson/action.yml             | YAML         |         17 |          0 |          1 |         18 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/.github/actions/install/libressl/action.yml                    | YAML         |         19 |          0 |          1 |         20 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/.github/actions/install/nlohmann-json/action.yml               | YAML         |         18 |          0 |          1 |         19 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/.github/actions/install/open-source-parsers-jsoncpp/action.yml | YAML         |         21 |          1 |          1 |         23 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/.github/actions/install/openssl/action.yml                     | YAML         |         21 |          0 |          1 |         22 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/.github/actions/install/wolfssl/action.yml                     | YAML         |         22 |          0 |          1 |         23 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/.github/actions/process-linting-results/action.yml             | YAML         |         21 |          4 |          2 |         27 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/.github/actions/render/defaults/action.yml                     | YAML         |         61 |          0 |          7 |         68 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/.github/actions/render/tests/action.yml                        | YAML         |         41 |          0 |          4 |         45 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/.github/logo.svg                                               | XML          |         16 |          0 |          0 |         16 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/.github/security.md                                            | Markdown     |         13 |          0 |          9 |         22 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/.github/workflows/cmake.yml                                    | YAML         |        235 |          0 |         41 |        276 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/.github/workflows/cross-platform.yml                           | YAML         |         27 |          0 |          7 |         34 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/.github/workflows/documentation.yml                            | YAML         |         23 |          0 |          3 |         26 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/.github/workflows/jwt.yml                                      | YAML         |         82 |          0 |         14 |         96 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/.github/workflows/lint.yml                                     | YAML         |        117 |          2 |          8 |        127 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/.github/workflows/release.yml                                  | YAML         |         35 |          2 |          8 |         45 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/.github/workflows/ssl.yml                                      | YAML         |        101 |          0 |         13 |        114 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/.github/workflows/targets.yml                                  | YAML         |         73 |          0 |          7 |         80 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/.github/workflows/traits.yml                                   | YAML         |         75 |          1 |         10 |         86 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/CMakeLists.txt                                                 | CMake        |        147 |          0 |         28 |        175 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/CMakePresets.json                                              | JSON         |         33 |          0 |          0 |         33 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/README.md                                                      | Markdown     |         99 |          0 |         51 |        150 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/cmake/CMakePresets.json                                        | JSON         |         48 |          0 |          0 |         48 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/docs/CMakeLists.txt                                            | CMake        |         21 |          0 |          3 |         24 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/docs/faqs.md                                                   | Markdown     |         48 |          0 |         27 |         75 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/docs/install.md                                                | Markdown     |         48 |          0 |         25 |         73 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/docs/overrides.css                                             | PostCSS      |         21 |          0 |          6 |         27 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/docs/signing.md                                                | Markdown     |         27 |          0 |          7 |         34 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/docs/ssl.md                                                    | Markdown     |         32 |          0 |         12 |         44 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/docs/traits.md                                                 | Markdown     |         86 |          0 |         22 |        108 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/example/CMakeLists.txt                                         | CMake        |         28 |          0 |         11 |         39 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/example/CMakePresets.json                                      | JSON         |         32 |          0 |          0 |         32 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/example/es256k.cpp                                             | C++          |         31 |          3 |          8 |         42 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/example/jwks-verify.cpp                                        | C++          |        121 |          8 |         10 |        139 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/example/partial-claim-verifier.cpp                             | C++          |         77 |          4 |         15 |         96 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/example/print-claims.cpp                                       | C++          |         10 |          1 |          3 |         14 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/example/private-claims.cpp                                     | C++          |         37 |          3 |         10 |         50 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/example/rsa-create.cpp                                         | C++          |         41 |          1 |          4 |         46 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/example/rsa-verify.cpp                                         | C++          |         30 |          5 |          7 |         42 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/example/traits/CMakeLists.txt                                  | CMake        |         30 |          0 |          7 |         37 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/example/traits/README.md                                       | Markdown     |          4 |          0 |          3 |          7 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/example/traits/boost-json.cpp                                  | C++          |         42 |          1 |         10 |         53 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/example/traits/danielaparker-jsoncons.cpp                      | C++          |         39 |          0 |          9 |         48 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/example/traits/kazuho-picojson.cpp                             | C++          |         39 |          0 |          9 |         48 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/example/traits/nlohmann-json.cpp                               | C++          |         39 |          0 |          9 |         48 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/example/traits/open-source-parsers-jsoncpp.cpp                 | C++          |         39 |          0 |          9 |         48 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/include/jwt-cpp/base.h                                         | C++          |        249 |         69 |         39 |        357 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/include/jwt-cpp/jwt.h                                          | C++          |      2,308 |      1,658 |        291 |      4,257 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/include/jwt-cpp/traits/boost-json/defaults.h                   | C++          |         32 |         48 |         12 |         92 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/include/jwt-cpp/traits/boost-json/traits.h                     | C++          |         64 |          5 |         16 |         85 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/include/jwt-cpp/traits/danielaparker-jsoncons/defaults.h       | C++          |         32 |         48 |         12 |         92 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/include/jwt-cpp/traits/danielaparker-jsoncons/traits.h         | C++          |        182 |          8 |         50 |        240 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/include/jwt-cpp/traits/kazuho-picojson/defaults.h              | C++          |         29 |         48 |         11 |         88 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/include/jwt-cpp/traits/kazuho-picojson/traits.h                | C++          |         62 |          4 |         15 |         81 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/include/jwt-cpp/traits/nlohmann-json/defaults.h                | C++          |         32 |         48 |         12 |         92 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/include/jwt-cpp/traits/nlohmann-json/traits.h                  | C++          |         62 |          5 |         15 |         82 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/include/jwt-cpp/traits/open-source-parsers-jsoncpp/defaults.h  | C++          |         34 |         48 |         12 |         94 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/include/jwt-cpp/traits/open-source-parsers-jsoncpp/traits.h    | C++          |        113 |          7 |         21 |        141 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/include/picojson/picojson.h                                    | C++          |      1,080 |         33 |         88 |      1,201 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/nuget/jwt-cpp.nuspec                                           | XML          |         29 |          0 |          1 |         30 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/nuget/jwt-cpp.targets                                          | XML          |          8 |          0 |          0 |          8 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/tests/BaseTest.cpp                                             | C++          |        113 |          1 |         21 |        135 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/tests/CMakeLists.txt                                           | CMake        |         74 |          0 |         12 |         86 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/tests/CMakePresets.json                                        | JSON         |        146 |          0 |          0 |        146 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/tests/ClaimTest.cpp                                            | C++          |        120 |          0 |         22 |        142 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/tests/HelperTest.cpp                                           | C++          |        218 |          2 |         24 |        244 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/tests/JwksTest.cpp                                             | C++          |        142 |          0 |         20 |        162 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/tests/Keys.cpp                                                 | C++          |        229 |          2 |          2 |        233 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/tests/OpenSSLErrorTest.cpp                                     | C++          |      1,238 |         20 |        136 |      1,394 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/tests/TestMain.cpp                                             | C++          |          5 |          0 |          2 |          7 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/tests/TokenFormatTest.cpp                                      | C++          |         28 |          0 |          8 |         36 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/tests/TokenTest.cpp                                            | C++          |        767 |         14 |        196 |        977 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/tests/cmake/CMakeLists.txt                                     | CMake        |          6 |          0 |          4 |         10 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/tests/cmake/base64-is-disabled.cpp                             | C++          |          8 |          0 |          3 |         11 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/tests/cmake/defaults-enabled.cpp                               | C++          |          5 |          0 |          2 |          7 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/tests/cmake/libressl-is-used.cpp                               | C++          |         10 |          0 |          4 |         14 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/tests/cmake/picojson-is-disabled.cpp                           | C++          |          8 |          0 |          3 |         11 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/tests/cmake/wolfssl-is-used.cpp                                | C++          |         13 |          1 |          5 |         19 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/tests/fuzz/BaseDecodeFuzz.cpp                                  | C++          |         10 |          1 |          3 |         14 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/tests/fuzz/BaseEncodeFuzz.cpp                                  | C++          |          7 |          0 |          3 |         10 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/tests/fuzz/CMakeLists.txt                                      | CMake        |         20 |          0 |          5 |         25 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/tests/fuzz/TokenDecodeFuzz.cpp                                 | C++          |         17 |          5 |          6 |         28 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/tests/traits/BoostJsonTest.cpp                                 | C++          |        118 |          0 |         24 |        142 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/tests/traits/JsonconsTest.cpp                                  | C++          |        124 |          0 |         24 |        148 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/tests/traits/NlohmannTest.cpp                                  | C++          |        118 |          0 |         24 |        142 |
+| /home/kun/projects/Knot/backend-service/third_party/jwt-cpp/tests/traits/OspJsoncppTest.cpp                                | C++          |        124 |          0 |         24 |        148 |
+| /home/kun/projects/Knot/backend-service/third_party/stb_image.h                                                            | C++          |      5,833 |      1,294 |        862 |      7,989 |
+| /home/kun/projects/Knot/backend-service/third_party/stb_image_resize2.h                                                    | C++          |      8,246 |        992 |      1,393 |     10,631 |
+| /home/kun/projects/Knot/backend-service/third_party/stb_image_write.h                                                      | C++          |      1,242 |        315 |        168 |      1,725 |
+| /home/kun/projects/Knot/entry/src/main/resources/base/element/color.json                                                   | JSON         |          8 |          0 |          0 |          8 |
+| /home/kun/projects/Knot/entry/src/main/resources/base/element/float.json                                                   | JSON         |          8 |          0 |          1 |          9 |
+| /home/kun/projects/Knot/entry/src/main/resources/base/element/string.json                                                  | JSON         |         28 |          0 |          1 |         29 |
+| /home/kun/projects/Knot/entry/src/main/resources/base/media/layered_image.json                                             | JSON         |          7 |          0 |          0 |          7 |
+| /home/kun/projects/Knot/entry/src/main/resources/base/profile/backup_config.json                                           | JSON         |          3 |          0 |          0 |          3 |
+| /home/kun/projects/Knot/entry/src/main/resources/base/profile/main_pages.json                                              | JSON         |          5 |          0 |          1 |          6 |
+| /home/kun/projects/Knot/entry/src/main/resources/dark/element/color.json                                                   | JSON         |          8 |          0 |          0 |          8 |
+| /home/kun/projects/Knot/rules/rules.md                                                                                     | Markdown     |         85 |          0 |         27 |        112 |
+| /home/kun/projects/Knot/需求分析.md                                                                                            | Markdown     |        926 |          0 |        188 |      1,114 |
+| Total                                                                                                                      |              |     48,594 |      6,970 |      9,361 |     64,925 |
++----------------------------------------------------------------------------------------------------------------------------+--------------+------------+------------+------------+------------+

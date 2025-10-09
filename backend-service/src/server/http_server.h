@@ -16,6 +16,7 @@
 // 前向声明
 class AuthHandler;
 class ImageHandler;
+class PostHandler;
 
 /**
  * @brief HTTP server wrapper class
@@ -59,6 +60,7 @@ private:
     std::unique_ptr<httplib::Server> server_;
     std::unique_ptr<AuthHandler> authHandler_;
     std::unique_ptr<ImageHandler> imageHandler_;
+    std::unique_ptr<PostHandler> postHandler_;
     std::string host_;
     int port_;
     bool running_;

@@ -8,6 +8,7 @@
 #include "server/http_server.h"
 #include "api/auth_handler.h"
 #include "api/image_handler.h"
+#include "api/post_handler.h"
 #include "utils/config_manager.h"
 #include "utils/logger.h"
 #include "database/connection_pool.h"
@@ -19,6 +20,7 @@ HttpServer::HttpServer()
     : server_(std::make_unique<httplib::Server>()),
       authHandler_(std::make_unique<AuthHandler>()),
       imageHandler_(std::make_unique<ImageHandler>()),
+      postHandler_(std::make_unique<PostHandler>()),
       host_("0.0.0.0"),
       port_(8080),
       running_(false) {
@@ -122,6 +124,9 @@ void HttpServer::setupRoutes() {
 
     // 注册图片相关路由
     imageHandler_->registerRoutes(*server_);
+
+    // 注册帖子相关路由
+    postHandler_->registerRoutes(*server_);
 
     // Health check endpoint
     server_->Get("/health", [this](const httplib::Request& req, httplib::Response& res) {
