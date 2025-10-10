@@ -76,11 +76,39 @@ private:
     
     /**
      * @brief 处理修改密码请求
-     * 
+     *
      * POST /api/v1/auth/change-password
      */
     void handleChangePassword(const httplib::Request& req, httplib::Response& res);
-    
+
+    /**
+     * @brief 处理获取当前用户信息请求
+     *
+     * GET /api/v1/users/profile
+     */
+    void handleGetProfile(const httplib::Request& req, httplib::Response& res);
+
+    /**
+     * @brief 处理更新用户信息请求
+     *
+     * PUT /api/v1/users/profile
+     */
+    void handleUpdateProfile(const httplib::Request& req, httplib::Response& res);
+
+    /**
+     * @brief 处理获取用户公开信息请求
+     *
+     * GET /api/v1/users/:user_id
+     */
+    void handleGetUserPublicInfo(const httplib::Request& req, httplib::Response& res);
+
+    /**
+     * @brief 处理用户名可用性检查请求
+     *
+     * GET /api/v1/users/check-username
+     */
+    void handleCheckUsername(const httplib::Request& req, httplib::Response& res);
+
     /**
      * @brief 解析JSON请求体
      * 

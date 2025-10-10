@@ -1,0 +1,105 @@
+Date : 2025-10-09 16:39:15
+Directory : /home/kun/projects/Knot
+Total : 54 files,  3816 codes, 747 comments, 931 blanks, all 5494 lines
+
+Languages
++--------------+------------+------------+------------+------------+------------+
+| language     | files      | code       | comment    | blank      | total      |
++--------------+------------+------------+------------+------------+------------+
+| Markdown     |         18 |      1,544 |          0 |        439 |      1,983 |
+| C++          |         19 |      1,501 |        686 |        444 |      2,631 |
+| YAML         |          3 |        778 |          1 |         21 |        800 |
+| CMake        |          1 |        168 |          0 |         32 |        200 |
+| MS SQL       |          1 |        160 |         53 |         50 |        263 |
+| Python       |          1 |          9 |          2 |          7 |         18 |
+| HTML         |          2 |       -125 |          0 |        -24 |       -149 |
+| Shell Script |          9 |       -219 |          5 |        -38 |       -252 |
++--------------+------------+------------+------------+------------+------------+
+
+Directories
++------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                                                                       | files      | code       | comment    | blank      | total      |
++------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                                                                          |         54 |      3,816 |        747 |        931 |      5,494 |
+| backend-service                                                                                            |         54 |      3,816 |        747 |        931 |      5,494 |
+| backend-service (Files)                                                                                    |          1 |          4 |          0 |          0 |          4 |
+| backend-service/config                                                                                     |          1 |        160 |         53 |         50 |        263 |
+| backend-service/deploy-static                                                                              |          4 |        882 |         55 |        261 |      1,198 |
+| backend-service/deploy-static (Files)                                                                      |          3 |        727 |         55 |        194 |        976 |
+| backend-service/deploy-static/build                                                                        |          1 |        155 |          0 |         67 |        222 |
+| backend-service/deploy-static/build/knot-deploy-20251009-111050                                            |          1 |        155 |          0 |         67 |        222 |
+| backend-service/deploy-static/build/knot-deploy-20251009-111050/docs                                       |          1 |        155 |          0 |         67 |        222 |
+| backend-service/deploy-static/build/knot-deploy-20251009-111050/docs/api                                   |          1 |        155 |          0 |         67 |        222 |
+| backend-service/docs                                                                                       |         19 |         28 |        -49 |       -176 |       -197 |
+| backend-service/docs (Files)                                                                               |         14 |     -1,739 |        -57 |       -298 |     -2,094 |
+| backend-service/docs/api                                                                                   |          5 |      1,767 |          8 |        122 |      1,897 |
+| backend-service/project_document                                                                           |          9 |      1,232 |          0 |        345 |      1,577 |
+| backend-service/src                                                                                        |         19 |      1,501 |        686 |        444 |      2,631 |
+| backend-service/src/api                                                                                    |          4 |        588 |        268 |        167 |      1,023 |
+| backend-service/src/database                                                                               |          8 |        688 |        279 |        214 |      1,181 |
+| backend-service/src/models                                                                                 |          4 |        146 |         75 |         47 |        268 |
+| backend-service/src/server                                                                                 |          2 |          7 |          3 |          1 |         11 |
+| backend-service/src/utils                                                                                  |          1 |         72 |         61 |         15 |        148 |
+| backend-service/test                                                                                       |          1 |          9 |          2 |          7 |         18 |
++------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++------------------------------------------------------------------------------------------------------------+--------------+------------+------------+------------+------------+
+| filename                                                                                                   | language     | code       | comment    | blank      | total      |
++------------------------------------------------------------------------------------------------------------+--------------+------------+------------+------------+------------+
+| /home/kun/projects/Knot/backend-service/README.md                                                          | Markdown     |          4 |          0 |          0 |          4 |
+| /home/kun/projects/Knot/backend-service/config/migration_to_posts.sql                                      | MS SQL       |        160 |         53 |         50 |        263 |
+| /home/kun/projects/Knot/backend-service/deploy-static/CMakeLists.txt                                       | CMake        |        168 |          0 |         32 |        200 |
+| /home/kun/projects/Knot/backend-service/deploy-static/README.md                                            | Markdown     |        358 |          0 |        107 |        465 |
+| /home/kun/projects/Knot/backend-service/deploy-static/build.sh                                             | Shell Script |        201 |         55 |         55 |        311 |
+| /home/kun/projects/Knot/backend-service/deploy-static/build/knot-deploy-20251009-111050/docs/api/README.md | Markdown     |        155 |          0 |         67 |        222 |
+| /home/kun/projects/Knot/backend-service/docs/DEPLOYMENT.md                                                 | Markdown     |       -234 |          0 |        -87 |       -321 |
+| /home/kun/projects/Knot/backend-service/docs/FIREWALL-SETUP.md                                             | Markdown     |       -191 |          0 |        -79 |       -270 |
+| /home/kun/projects/Knot/backend-service/docs/NETWORK-ACCESS.md                                             | Markdown     |        226 |          0 |         73 |        299 |
+| /home/kun/projects/Knot/backend-service/docs/QUICKSTART.md                                                 | Markdown     |       -194 |          0 |        -64 |       -258 |
+| /home/kun/projects/Knot/backend-service/docs/README.md                                                     | Markdown     |         33 |          0 |         10 |         43 |
+| /home/kun/projects/Knot/backend-service/docs/api/README.md                                                 | Markdown     |        155 |          0 |         67 |        222 |
+| /home/kun/projects/Knot/backend-service/docs/api/api-docs.html                                             | HTML         |         55 |          0 |          4 |         59 |
+| /home/kun/projects/Knot/backend-service/docs/api/docker-compose-swagger.yml                                | YAML         |         14 |          0 |          3 |         17 |
+| /home/kun/projects/Knot/backend-service/docs/api/openapi.yaml                                              | YAML         |      1,527 |          3 |         41 |      1,571 |
+| /home/kun/projects/Knot/backend-service/docs/api/start-api-docs.sh                                         | Shell Script |         16 |          5 |          7 |         28 |
+| /home/kun/projects/Knot/backend-service/docs/check-network-access.sh                                       | Shell Script |        125 |         11 |         18 |        154 |
+| /home/kun/projects/Knot/backend-service/docs/check-status.sh                                               | Shell Script |        -75 |         -9 |        -12 |        -96 |
+| /home/kun/projects/Knot/backend-service/docs/index.html                                                    | HTML         |       -180 |          0 |        -28 |       -208 |
+| /home/kun/projects/Knot/backend-service/docs/open-firewall.sh                                              | Shell Script |       -132 |        -23 |        -40 |       -195 |
+| /home/kun/projects/Knot/backend-service/docs/openapi.yaml                                                  | YAML         |       -763 |         -2 |        -23 |       -788 |
+| /home/kun/projects/Knot/backend-service/docs/serve.sh                                                      | Shell Script |        -23 |         -4 |         -6 |        -33 |
+| /home/kun/projects/Knot/backend-service/docs/start-docs.sh                                                 | Shell Script |       -108 |        -12 |        -13 |       -133 |
+| /home/kun/projects/Knot/backend-service/docs/test-network.sh                                               | Shell Script |       -116 |         -8 |        -23 |       -147 |
+| /home/kun/projects/Knot/backend-service/docs/verify-firewall.sh                                            | Shell Script |       -107 |        -10 |        -24 |       -141 |
+| /home/kun/projects/Knot/backend-service/project_document/[000]API文档.md                                     | Markdown     |        210 |          0 |         41 |        251 |
+| /home/kun/projects/Knot/backend-service/project_document/[001]数据库设计文档.md                                   | Markdown     |        341 |          0 |         92 |        433 |
+| /home/kun/projects/Knot/backend-service/project_document/[001]项目架构文档.md                                    | Markdown     |       -383 |          0 |       -105 |       -488 |
+| /home/kun/projects/Knot/backend-service/project_document/[002]环境安装配置教程.md                                  | Markdown     |       -276 |          0 |        -70 |       -346 |
+| /home/kun/projects/Knot/backend-service/project_document/[002]项目架构文档.md                                    | Markdown     |        404 |          0 |        108 |        512 |
+| /home/kun/projects/Knot/backend-service/project_document/[003]环境安装配置教程.md                                  | Markdown     |        276 |          0 |         70 |        346 |
+| /home/kun/projects/Knot/backend-service/project_document/[102]阶段C-图片管理模块.md                                | Markdown     |         43 |          0 |         11 |         54 |
+| /home/kun/projects/Knot/backend-service/project_document/[104]Apifox测试流程-BUG修复验证.md                        | Markdown     |        388 |          0 |         96 |        484 |
+| /home/kun/projects/Knot/backend-service/project_document/[105]阶段C-2-多图片帖子系统.md                             | Markdown     |        229 |          0 |        102 |        331 |
+| /home/kun/projects/Knot/backend-service/src/api/base_handler.cpp                                           | C++          |        102 |         18 |         25 |        145 |
+| /home/kun/projects/Knot/backend-service/src/api/base_handler.h                                             | C++          |         32 |         81 |         16 |        129 |
+| /home/kun/projects/Knot/backend-service/src/api/post_handler.cpp                                           | C++          |        426 |         85 |        106 |        617 |
+| /home/kun/projects/Knot/backend-service/src/api/post_handler.h                                             | C++          |         28 |         84 |         20 |        132 |
+| /home/kun/projects/Knot/backend-service/src/database/image_repository.cpp                                  | C++          |        -45 |         -7 |        -12 |        -64 |
+| /home/kun/projects/Knot/backend-service/src/database/image_repository.h                                    | C++          |          0 |         -2 |          0 |         -2 |
+| /home/kun/projects/Knot/backend-service/src/database/mysql_statement.h                                     | C++          |         35 |         35 |         12 |         82 |
+| /home/kun/projects/Knot/backend-service/src/database/post_repository.cpp                                   | C++          |        595 |         80 |        171 |        846 |
+| /home/kun/projects/Knot/backend-service/src/database/post_repository.h                                     | C++          |         26 |         97 |         21 |        144 |
+| /home/kun/projects/Knot/backend-service/src/database/tag_repository.cpp                                    | C++          |          8 |          2 |          2 |         12 |
+| /home/kun/projects/Knot/backend-service/src/database/tag_repository.h                                      | C++          |          2 |         13 |          2 |         17 |
+| /home/kun/projects/Knot/backend-service/src/database/transaction_guard.h                                   | C++          |         67 |         61 |         18 |        146 |
+| /home/kun/projects/Knot/backend-service/src/models/image.cpp                                               | C++          |        -40 |         -1 |         -6 |        -47 |
+| /home/kun/projects/Knot/backend-service/src/models/image.h                                                 | C++          |        -20 |        -16 |         -4 |        -40 |
+| /home/kun/projects/Knot/backend-service/src/models/post.cpp                                                | C++          |        140 |         24 |         37 |        201 |
+| /home/kun/projects/Knot/backend-service/src/models/post.h                                                  | C++          |         66 |         68 |         20 |        154 |
+| /home/kun/projects/Knot/backend-service/src/server/http_server.cpp                                         | C++          |          5 |          3 |          1 |          9 |
+| /home/kun/projects/Knot/backend-service/src/server/http_server.h                                           | C++          |          2 |          0 |          0 |          2 |
+| /home/kun/projects/Knot/backend-service/src/utils/pagination_helper.h                                      | C++          |         72 |         61 |         15 |        148 |
+| /home/kun/projects/Knot/backend-service/test/test_delete.py                                                | Python       |          9 |          2 |          7 |         18 |
+| Total                                                                                                      |              |      3,816 |        747 |        931 |      5,494 |
++------------------------------------------------------------------------------------------------------------+--------------+------------+------------+------------+------------+

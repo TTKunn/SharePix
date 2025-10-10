@@ -159,7 +159,7 @@ User UserRepository::buildUserFromStatement(void* stmtPtr) {
     User user;
     
     // 准备结果绑定
-    MYSQL_BIND result[14];
+    MYSQL_BIND result[17];
     memset(result, 0, sizeof(result));
     
     // 定义变量存储结果
@@ -174,14 +174,19 @@ User UserRepository::buildUserFromStatement(void* stmtPtr) {
     char role[10] = {0};
     char status[10] = {0};
     char avatarUrl[256] = {0};
+    char bio[501] = {0};
+    char gender[25] = {0};
+    char location[101] = {0};
     int deviceCount;
     MYSQL_TIME createTime, updateTime;
     
     unsigned long userId_length, username_length, password_length, salt_length;
     unsigned long realName_length, phone_length, email_length;
     unsigned long role_length, status_length, avatarUrl_length;
-    
+    unsigned long bio_length, gender_length, location_length;
+
     bool email_is_null, avatarUrl_is_null;
+    bool bio_is_null, gender_is_null, location_is_null;
     
     // 绑定结果（按照 SELECT * 的顺序）
     // id
@@ -249,18 +254,39 @@ User UserRepository::buildUserFromStatement(void* stmtPtr) {
     result[10].buffer_length = sizeof(avatarUrl);
     result[10].length = &avatarUrl_length;
     result[10].is_null = &avatarUrl_is_null;
-    
+
+    // bio (可为空)
+    result[11].buffer_type = MYSQL_TYPE_STRING;
+    result[11].buffer = bio;
+    result[11].buffer_length = sizeof(bio);
+    result[11].length = &bio_length;
+    result[11].is_null = &bio_is_null;
+
+    // gender (可为空)
+    result[12].buffer_type = MYSQL_TYPE_STRING;
+    result[12].buffer = gender;
+    result[12].buffer_length = sizeof(gender);
+    result[12].length = &gender_length;
+    result[12].is_null = &gender_is_null;
+
+    // location (可为空)
+    result[13].buffer_type = MYSQL_TYPE_STRING;
+    result[13].buffer = location;
+    result[13].buffer_length = sizeof(location);
+    result[13].length = &location_length;
+    result[13].is_null = &location_is_null;
+
     // device_count
-    result[11].buffer_type = MYSQL_TYPE_LONG;
-    result[11].buffer = &deviceCount;
-    
+    result[14].buffer_type = MYSQL_TYPE_LONG;
+    result[14].buffer = &deviceCount;
+
     // create_time
-    result[12].buffer_type = MYSQL_TYPE_TIMESTAMP;
-    result[12].buffer = &createTime;
-    
+    result[15].buffer_type = MYSQL_TYPE_TIMESTAMP;
+    result[15].buffer = &createTime;
+
     // update_time
-    result[13].buffer_type = MYSQL_TYPE_TIMESTAMP;
-    result[13].buffer = &updateTime;
+    result[16].buffer_type = MYSQL_TYPE_TIMESTAMP;
+    result[16].buffer = &updateTime;
     
     if (mysql_stmt_bind_result(stmt, result) != 0) {
         Logger::error("Failed to bind result: " + std::string(mysql_stmt_error(stmt)));
@@ -287,7 +313,19 @@ User UserRepository::buildUserFromStatement(void* stmtPtr) {
         if (!avatarUrl_is_null) {
             user.setAvatarUrl(std::string(avatarUrl, avatarUrl_length));
         }
-        
+
+        if (!bio_is_null) {
+            user.setBio(std::string(bio, bio_length));
+        }
+
+        if (!gender_is_null) {
+            user.setGender(std::string(gender, gender_length));
+        }
+
+        if (!location_is_null) {
+            user.setLocation(std::string(location, location_length));
+        }
+
         user.setDeviceCount(deviceCount);
         
         // 转换时间
@@ -532,5 +570,255 @@ bool UserRepository::emailExists(const std::string& email) {
 bool UserRepository::phoneExists(const std::string& phone) {
     auto user = findByPhone(phone);
     return user.has_value();
+}
+
+// 更新用户基本信息
+bool UserRepository::updateUserProfile(int userId,
+                                      const std::string& realName,
+                                      const std::string& email,
+                                      const std::string& avatarUrl,
+                                      const std::string& phone,
+                                      const std::string& bio,
+                                      const std::string& gender,
+                                      const std::string& location) {
+    try {
+        // 使用ConnectionGuard自动管理连接
+        ConnectionGuard connGuard(DatabaseConnectionPool::getInstance());
+        if (!connGuard.isValid()) {
+            Logger::error("获取数据库连接失败");
+            return false;
+        }
+
+        MySQLStatement stmt(connGuard.get());
+        if (!stmt.get()) {
+            Logger::error("创建MySQL语句失败");
+            return false;
+        }
+
+        // 准备SQL语句 - 只更新允许修改的字段
+        const char* query =
+            "UPDATE users SET "
+            "real_name = ?, email = ?, avatar_url = ?, phone = ?, "
+            "bio = ?, gender = ?, location = ?, "
+            "update_time = CURRENT_TIMESTAMP "
+            "WHERE id = ?";
+
+        if (mysql_stmt_prepare(stmt.get(), query, strlen(query)) != 0) {
+            Logger::error("准备SQL语句失败: " + std::string(mysql_stmt_error(stmt.get())));
+            return false;
+        }
+
+        // 绑定参数
+        MYSQL_BIND bind[8];
+        memset(bind, 0, sizeof(bind));
+
+        // 准备NULL标志变量
+        bool email_is_null = email.empty();
+        bool avatar_is_null = avatarUrl.empty();
+        bool bio_is_null = bio.empty();
+        bool gender_is_null = gender.empty();
+        bool location_is_null = location.empty();
+
+        // real_name
+        bind[0].buffer_type = MYSQL_TYPE_STRING;
+        bind[0].buffer = (char*)realName.c_str();
+        bind[0].buffer_length = realName.length();
+
+        // email (可为空)
+        bind[1].buffer_type = MYSQL_TYPE_STRING;
+        bind[1].buffer = (char*)email.c_str();
+        bind[1].buffer_length = email.length();
+        bind[1].is_null = &email_is_null;
+
+        // avatar_url (可为空)
+        bind[2].buffer_type = MYSQL_TYPE_STRING;
+        bind[2].buffer = (char*)avatarUrl.c_str();
+        bind[2].buffer_length = avatarUrl.length();
+        bind[2].is_null = &avatar_is_null;
+
+        // phone
+        bind[3].buffer_type = MYSQL_TYPE_STRING;
+        bind[3].buffer = (char*)phone.c_str();
+        bind[3].buffer_length = phone.length();
+
+        // bio (可为空)
+        bind[4].buffer_type = MYSQL_TYPE_STRING;
+        bind[4].buffer = (char*)bio.c_str();
+        bind[4].buffer_length = bio.length();
+        bind[4].is_null = &bio_is_null;
+
+        // gender (可为空)
+        bind[5].buffer_type = MYSQL_TYPE_STRING;
+        bind[5].buffer = (char*)gender.c_str();
+        bind[5].buffer_length = gender.length();
+        bind[5].is_null = &gender_is_null;
+
+        // location (可为空)
+        bind[6].buffer_type = MYSQL_TYPE_STRING;
+        bind[6].buffer = (char*)location.c_str();
+        bind[6].buffer_length = location.length();
+        bind[6].is_null = &location_is_null;
+
+        // userId (WHERE条件)
+        bind[7].buffer_type = MYSQL_TYPE_LONG;
+        bind[7].buffer = (char*)&userId;
+
+        if (mysql_stmt_bind_param(stmt.get(), bind) != 0) {
+            Logger::error("绑定参数失败: " + std::string(mysql_stmt_error(stmt.get())));
+            return false;
+        }
+
+        if (mysql_stmt_execute(stmt.get()) != 0) {
+            Logger::error("执行SQL语句失败: " + std::string(mysql_stmt_error(stmt.get())));
+            return false;
+        }
+
+        Logger::info("用户信息更新成功: userId=" + std::to_string(userId));
+        return true;
+
+    } catch (const std::exception& e) {
+        Logger::error("updateUserProfile异常: " + std::string(e.what()));
+        return false;
+    }
+}
+
+// 检查邮箱是否被其他用户使用
+bool UserRepository::emailExistsForOtherUser(const std::string& email, int excludeUserId) {
+    if (email.empty()) {
+        return false;
+    }
+
+    try {
+        // 使用ConnectionGuard自动管理连接
+        ConnectionGuard connGuard(DatabaseConnectionPool::getInstance());
+        if (!connGuard.isValid()) {
+            Logger::error("获取数据库连接失败");
+            return false;
+        }
+
+        MySQLStatement stmt(connGuard.get());
+        if (!stmt.get()) {
+            return false;
+        }
+
+        const char* query = "SELECT COUNT(*) FROM users WHERE email = ? AND id != ?";
+
+        if (mysql_stmt_prepare(stmt.get(), query, strlen(query)) != 0) {
+            Logger::error("准备SQL语句失败: " + std::string(mysql_stmt_error(stmt.get())));
+            return false;
+        }
+
+        // 绑定参数
+        MYSQL_BIND bind[2];
+        memset(bind, 0, sizeof(bind));
+
+        bind[0].buffer_type = MYSQL_TYPE_STRING;
+        bind[0].buffer = (char*)email.c_str();
+        bind[0].buffer_length = email.length();
+
+        bind[1].buffer_type = MYSQL_TYPE_LONG;
+        bind[1].buffer = (char*)&excludeUserId;
+
+        if (mysql_stmt_bind_param(stmt.get(), bind) != 0) {
+            Logger::error("绑定参数失败: " + std::string(mysql_stmt_error(stmt.get())));
+            return false;
+        }
+
+        if (mysql_stmt_execute(stmt.get()) != 0) {
+            Logger::error("执行SQL语句失败: " + std::string(mysql_stmt_error(stmt.get())));
+            return false;
+        }
+
+        // 绑定结果
+        MYSQL_BIND result[1];
+        memset(result, 0, sizeof(result));
+
+        long long count = 0;
+        result[0].buffer_type = MYSQL_TYPE_LONGLONG;
+        result[0].buffer = (char*)&count;
+
+        if (mysql_stmt_bind_result(stmt.get(), result) != 0) {
+            Logger::error("绑定结果失败: " + std::string(mysql_stmt_error(stmt.get())));
+            return false;
+        }
+
+        if (mysql_stmt_fetch(stmt.get()) == 0) {
+            return count > 0;
+        }
+
+        return false;
+
+    } catch (const std::exception& e) {
+        Logger::error("emailExistsForOtherUser异常: " + std::string(e.what()));
+        return false;
+    }
+}
+
+// 检查手机号是否被其他用户使用
+bool UserRepository::phoneExistsForOtherUser(const std::string& phone, int excludeUserId) {
+    try {
+        // 使用ConnectionGuard自动管理连接
+        ConnectionGuard connGuard(DatabaseConnectionPool::getInstance());
+        if (!connGuard.isValid()) {
+            Logger::error("获取数据库连接失败");
+            return false;
+        }
+
+        MySQLStatement stmt(connGuard.get());
+        if (!stmt.get()) {
+            return false;
+        }
+
+        const char* query = "SELECT COUNT(*) FROM users WHERE phone = ? AND id != ?";
+
+        if (mysql_stmt_prepare(stmt.get(), query, strlen(query)) != 0) {
+            Logger::error("准备SQL语句失败: " + std::string(mysql_stmt_error(stmt.get())));
+            return false;
+        }
+
+        // 绑定参数
+        MYSQL_BIND bind[2];
+        memset(bind, 0, sizeof(bind));
+
+        bind[0].buffer_type = MYSQL_TYPE_STRING;
+        bind[0].buffer = (char*)phone.c_str();
+        bind[0].buffer_length = phone.length();
+
+        bind[1].buffer_type = MYSQL_TYPE_LONG;
+        bind[1].buffer = (char*)&excludeUserId;
+
+        if (mysql_stmt_bind_param(stmt.get(), bind) != 0) {
+            Logger::error("绑定参数失败: " + std::string(mysql_stmt_error(stmt.get())));
+            return false;
+        }
+
+        if (mysql_stmt_execute(stmt.get()) != 0) {
+            Logger::error("执行SQL语句失败: " + std::string(mysql_stmt_error(stmt.get())));
+            return false;
+        }
+
+        // 绑定结果
+        MYSQL_BIND result[1];
+        memset(result, 0, sizeof(result));
+
+        long long count = 0;
+        result[0].buffer_type = MYSQL_TYPE_LONGLONG;
+        result[0].buffer = (char*)&count;
+
+        if (mysql_stmt_bind_result(stmt.get(), result) != 0) {
+            Logger::error("绑定结果失败: " + std::string(mysql_stmt_error(stmt.get())));
+            return false;
+        }
+
+        if (mysql_stmt_fetch(stmt.get()) == 0) {
+            return count > 0;
+        }
+
+        return false;
+
+    } catch (const std::exception& e) {
+        Logger::error("phoneExistsForOtherUser异常: " + std::string(e.what()));
+        return false;
+    }
 }
 

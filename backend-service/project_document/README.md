@@ -44,7 +44,7 @@
 
 ## �📋 文档结构
 
-本目录包含共享停车系统的所有技术文档，按照功能和重要性分为三个层次：
+本目录包含Knot图片分享系统的所有技术文档，按照功能和重要性分为三个层次：
 
 ### 第一层：核心文档（000-099）
 
@@ -81,7 +81,7 @@
 
 ### 项目概述
 
-**项目名称**: 共享停车系统（Shared Parking System）
+**项目名称**: Knot图片分享系统（Knot Image Sharing Service）
 **项目类型**: 后端服务系统
 **开发语言**: C++17
 **数据库**: MySQL 8.0.43
@@ -89,7 +89,7 @@
 
 ### 项目目标
 
-构建一个高性能、高可用、易扩展的共享停车系统后端服务，提供完整的用户管理、停车位管理、预订管理、支付管理等功能。
+构建一个高性能、高可用、易扩展的图片分享社交平台后端服务，提供完整的用户管理、图片管理、Feed推荐、社交互动等功能。
 
 ### 技术选型
 
@@ -132,22 +132,21 @@
 
 第3层：API接口层（Handler）
   - AuthHandler: 用户认证接口
-  - ParkingSpaceHandler: 停车位管理接口
-  - BookingHandler: 预订管理接口（规划中）
-  - PaymentHandler: 支付管理接口（规划中）
+  - PostHandler: 帖子管理接口
+  - ImageHandler: 图片管理接口
+  - TagHandler: 标签管理接口
 
 第4层：业务逻辑层（Service）
   - AuthService: 认证业务逻辑
-  - UserService: 用户业务逻辑
-  - ParkingSpaceService: 停车位业务逻辑
-  - BookingService: 预订业务逻辑（规划中）
-  - PaymentService: 支付业务逻辑（规划中）
+  - PostService: 帖子业务逻辑
+  - ImageService: 图片业务逻辑
+  - TagService: 标签业务逻辑
 
 第5层：数据访问层（Repository）
   - UserRepository: 用户数据访问
-  - ParkingSpaceRepository: 停车位数据访问
-  - BookingRepository: 预订数据访问（规划中）
-  - PaymentRepository: 支付数据访问（规划中）
+  - PostRepository: 帖子数据访问
+  - ImageRepository: 图片数据访问
+  - TagRepository: 标签数据访问
 
 第6层：安全层
   - JWTManager: JWT令牌管理
@@ -162,15 +161,16 @@
 
 第8层：数据模型层（Model）
   - User: 用户模型
-  - ParkingSpace: 停车位模型
-  - Booking: 预订模型（规划中）
-  - Payment: 支付模型（规划中）
+  - Post: 帖子模型
+  - Image: 图片模型
+  - Tag: 标签模型
 
 第9层：数据库层
   - users表: 用户信息
-  - parking_spaces表: 停车位信息
-  - bookings表: 预订信息（规划中）
-  - payments表: 支付信息（规划中）
+  - posts表: 帖子信息
+  - images表: 图片信息
+  - tags表: 标签信息
+  - post_tags表: 帖子标签关联
 ```
 
 #### 设计模式
@@ -236,153 +236,74 @@
 
 **文档**: [101]阶段B-用户认证模块.md
 
-#### 阶段C: 停车位管理模块（已完成 ✅）
+#### 阶段C: 图片管理模块（已完成 ✅）
 
-**目标**: 实现停车位管理功能
+**目标**: 实现图片分享功能
 
 **完成内容**:
-- ✅ 停车位CRUD操作
-- ✅ 地理位置管理
-- ✅ 停车位状态管理
-- ✅ 设施和图片管理
-- ✅ 连接池优化（RAII）
-- ✅ 并发性能优化
+- ✅ 多图片帖子发布（1-9张图片）
+- ✅ 图片压缩与缩略图生成
+- ✅ 帖子编辑与删除
+- ✅ 图片顺序管理
+- ✅ Feed推荐算法
+- ✅ 标签系统
 
 **技术要点**:
-- ConnectionGuard RAII自动管理连接
-- 异常安全，防止连接泄漏
-- Listen Backlog: 128，Thread Pool: 32
-- 并发能力提升20倍
+- STB Image库进行图片处理
+- 图片压缩（质量85%）
+- 缩略图生成（300x300）
+- 基于热度和时间的Feed推荐算法
 
 **数据库**:
-- parking_spaces表: 停车位信息存储
+- posts表: 帖子信息存储
+- images表: 图片信息存储
+- tags表: 标签信息存储
+- post_tags表: 帖子标签关联
 
-**API接口**: 5个
-- POST /api/v1/my-spaces
-- GET /api/v1/my-spaces
-- GET /api/v1/my-spaces/:space_id
-- PUT /api/v1/my-spaces/:space_id
-- DELETE /api/v1/my-spaces/:space_id
-
-**性能指标**:
-- 并发连接数: 128
-- 线程池大小: 32
-- 并发处理能力: ~100请求/秒
-- 单请求响应时间: ~45ms
-
-**文档**: [102]阶段C-停车位管理模块.md
+**文档**: [102]阶段C-图片管理模块.md, [105]阶段C-2-多图片帖子系统.md
 
 
-#### 阶段D: 预订管理模块（规划中 ⏳）
+#### 阶段D: 社交互动模块（规划中 ⏳）
 
-**目标**: 实现停车位预订功能
+**目标**: 实现社交互动功能
 
 **计划内容**:
-- ⏳ 停车位搜索（按位置、价格、设施）
-- ⏳ 停车位预订
-- ⏳ 预订查询
-- ⏳ 预订取消
-- ⏳ 预订状态管理
-- ⏳ 预订时间冲突检测
+- ⏳ 点赞功能
+- ⏳ 收藏功能
+- ⏳ 关注/粉丝系统
+- ⏳ 评论功能
 
 **技术要点**:
-- 地理位置搜索（经纬度范围查询）
-- 时间段冲突检测算法
-- 事务处理保证数据一致性
-- 乐观锁防止超订
-
-**数据库**:
-- bookings表: 预订信息存储
-  - booking_id: 预订ID
-  - space_id: 停车位ID
-  - user_id: 用户ID
-  - start_time: 开始时间
-  - end_time: 结束时间
-  - status: 预订状态
-  - total_price: 总价格
-
-**API接口**: 预计6个
-- GET /api/v1/spaces/search
-- POST /api/v1/bookings
-- GET /api/v1/bookings
-- GET /api/v1/bookings/:booking_id
-- PUT /api/v1/bookings/:booking_id
-- DELETE /api/v1/bookings/:booking_id
-
-**预计工作量**: 2-3周
-
-#### 阶段E: 支付模块（规划中 ⏳）
-
-**目标**: 实现支付功能
-
-**计划内容**:
-- ⏳ 支付接口集成（微信支付、支付宝）
-- ⏳ 订单创建
-- ⏳ 支付回调处理
-- ⏳ 退款处理
-- ⏳ 支付状态查询
-- ⏳ 账单管理
-
-**技术要点**:
-- 第三方支付SDK集成
-- 异步回调处理
-- 幂等性保证
-- 支付安全验证
-
-**数据库**:
-- payments表: 支付信息存储
-  - payment_id: 支付ID
-  - booking_id: 预订ID
-  - user_id: 用户ID
-  - amount: 支付金额
-  - payment_method: 支付方式
-  - status: 支付状态
-  - transaction_id: 第三方交易ID
-
-**API接口**: 预计5个
-- POST /api/v1/payments
-- GET /api/v1/payments/:payment_id
-- POST /api/v1/payments/:payment_id/refund
-- GET /api/v1/payments/callback
-- GET /api/v1/bills
-
-**预计工作量**: 2-3周
-
-#### 阶段F: 评价模块（规划中 ⏳）
-
-**目标**: 实现停车位评价功能
-
-**计划内容**:
-- ⏳ 停车位评价
-- ⏳ 评价查询
-- ⏳ 评分统计
-- ⏳ 评价回复
-- ⏳ 评价审核
-
-**技术要点**:
-- 评分算法
+- 点赞去重
+- 关注关系管理
+- 评论嵌套结构
 - 敏感词过滤
-- 评价排序
 
 **数据库**:
-- reviews表: 评价信息存储
-  - review_id: 评价ID
-  - space_id: 停车位ID
-  - user_id: 用户ID
-  - booking_id: 预订ID
-  - rating: 评分（1-5）
-  - comment: 评价内容
-  - images: 评价图片
+- likes表: 点赞信息
+- favorites表: 收藏信息
+- follows表: 关注关系
+- comments表: 评论信息
 
-**API接口**: 预计4个
-- POST /api/v1/reviews
-- GET /api/v1/reviews
-- GET /api/v1/spaces/:space_id/reviews
-- DELETE /api/v1/reviews/:review_id
+**预计工作量**: 2-3周
+
+#### 阶段E: 分享系统（规划中 ⏳）
+
+**目标**: 实现分享功能
+
+**计划内容**:
+- ⏳ Deep Link生成
+- ⏳ 分享统计
+- ⏳ 外部平台分享
+
+**技术要点**:
+- Deep Link协议设计
+- 分享数据统计
+- 第三方平台集成
 
 **预计工作量**: 1-2周
 
-#### 阶段G: 系统优化（规划中 ⏳）
+#### 阶段F: 系统优化（规划中 ⏳）
 
 **目标**: 提升系统性能和可用性
 
@@ -451,17 +372,16 @@
 |------|------|------|----------|
 | 阶段A | 基础模块 | ✅ 已完成 | 2025-10-01 |
 | 阶段B | 用户认证模块 | ✅ 已完成 | 2025-10-01 |
-| 阶段C | 停车位管理模块 | ✅ 已完成 | 2025-10-02 |
-| 阶段D | 预订管理模块 | ⏳ 规划中 | 预计2-3周 |
-| 阶段E | 支付模块 | ⏳ 规划中 | 预计2-3周 |
-| 阶段F | 评价模块 | ⏳ 规划中 | 预计1-2周 |
-| 阶段G | 系统优化 | ⏳ 规划中 | 预计2-3周 |
+| 阶段C | 图片管理模块 | ✅ 已完成 | 2025-10-08 |
+| 阶段D | 社交互动模块 | ⏳ 规划中 | 预计2-3周 |
+| 阶段E | 分享系统 | ⏳ 规划中 | 预计1-2周 |
+| 阶段F | 系统优化 | ⏳ 规划中 | 预计2-3周 |
 
 ### 风险评估
 
 | 风险 | 等级 | 应对措施 |
 |------|------|----------|
-| 第三方支付集成复杂 | 高 | 提前调研，准备备选方案 |
+| 图片存储空间不足 | 中 | 使用对象存储服务（OSS） |
 | 并发性能瓶颈 | 中 | 压力测试，及时优化 |
 | 数据库性能问题 | 中 | 索引优化，读写分离 |
 | 安全漏洞 | 高 | 代码审查，安全测试 |
@@ -670,5 +590,5 @@
 
 **文档版本**: vX.Y.Z
 **最后更新**: YYYY-MM-DD
-**维护者**: Shared Parking Team
+**维护者**: Knot Development Team
 ```

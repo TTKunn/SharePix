@@ -106,11 +106,53 @@ public:
     
     /**
      * @brief 检查手机号是否存在
-     * 
+     *
      * @param phone 手机号
      * @return true 存在，false 不存在
      */
     bool phoneExists(const std::string& phone);
+
+    /**
+     * @brief 更新用户基本信息
+     *
+     * 只更新允许用户自主修改的字段
+     *
+     * @param userId 用户ID
+     * @param realName 真实姓名
+     * @param email 邮箱
+     * @param avatarUrl 头像URL
+     * @param phone 手机号
+     * @param bio 个人简介
+     * @param gender 性别
+     * @param location 所在地
+     * @return true 更新成功，false 更新失败
+     */
+    bool updateUserProfile(int userId,
+                          const std::string& realName,
+                          const std::string& email,
+                          const std::string& avatarUrl,
+                          const std::string& phone,
+                          const std::string& bio,
+                          const std::string& gender,
+                          const std::string& location);
+
+    /**
+     * @brief 检查邮箱是否被其他用户使用
+     *
+     * @param email 邮箱
+     * @param excludeUserId 排除的用户ID（当前用户）
+     * @return true 已被使用，false 未被使用
+     */
+    bool emailExistsForOtherUser(const std::string& email, int excludeUserId);
+
+    /**
+     * @brief 检查手机号是否被其他用户使用
+     *
+     * @param phone 手机号
+     * @param excludeUserId 排除的用户ID（当前用户）
+     * @return true 已被使用，false 未被使用
+     */
+    bool phoneExistsForOtherUser(const std::string& phone, int excludeUserId);
 
 private:
     /**

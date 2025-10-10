@@ -64,6 +64,9 @@ public:
     UserRole getRole() const { return role_; }
     UserStatus getStatus() const { return status_; }
     const std::string& getAvatarUrl() const { return avatarUrl_; }
+    const std::string& getBio() const { return bio_; }
+    const std::string& getGender() const { return gender_; }
+    const std::string& getLocation() const { return location_; }
     int getDeviceCount() const { return deviceCount_; }
     std::time_t getCreateTime() const { return createTime_; }
     std::time_t getUpdateTime() const { return updateTime_; }
@@ -80,6 +83,9 @@ public:
     void setRole(UserRole role) { role_ = role; }
     void setStatus(UserStatus status) { status_ = status; }
     void setAvatarUrl(const std::string& avatarUrl) { avatarUrl_ = avatarUrl; }
+    void setBio(const std::string& bio) { bio_ = bio; }
+    void setGender(const std::string& gender) { gender_ = gender; }
+    void setLocation(const std::string& location) { location_ = location; }
     void setDeviceCount(int deviceCount) { deviceCount_ = deviceCount; }
     void setCreateTime(std::time_t createTime) { createTime_ = createTime; }
     void setUpdateTime(std::time_t updateTime) { updateTime_ = updateTime; }
@@ -150,6 +156,9 @@ private:
     UserRole role_;               // 用户角色
     UserStatus status_;           // 账户状态
     std::string avatarUrl_;       // 头像URL
+    std::string bio_;             // 个人简介
+    std::string gender_;          // 性别
+    std::string location_;        // 所在地
     int deviceCount_;             // 绑定设备数
     std::time_t createTime_;      // 创建时间
     std::time_t updateTime_;      // 更新时间

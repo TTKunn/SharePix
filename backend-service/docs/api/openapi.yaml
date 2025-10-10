@@ -17,9 +17,10 @@ info:
     - 所有数据库查询使用预编译语句防止SQL注入
 
     ## 版本更新
+    - v2.1.0: 新增用户信息管理功能（获取、修改用户信息、检查用户名可用性）
     - v2.0.0: 新增多图片帖子系统，支持1-9张图片上传
     - v1.2.0: 基础图片管理功能
-  version: 2.0.0
+  version: 2.1.0
   contact:
     name: Knot Team
     email: support@knot.example.com
@@ -36,6 +37,8 @@ servers:
 tags:
   - name: 认证
     description: 用户认证相关接口
+  - name: 用户管理
+    description: 用户信息查询和修改（v2.1新增）
   - name: 帖子管理
     description: 多图片帖子的创建、查询、编辑、删除（v2.0新增）
   - name: 图片管理
@@ -370,6 +373,98 @@ components:
           description: 用户角色
           example: "USER"
 
+    UserProfileUpdateRequest:
+      type: object
+      properties:
+        real_name:
+          type: string
+          maxLength: 50
+          description: 真实姓名
+          example: "张三"
+        phone:
+          type: string
+          pattern: '^1[3-9]\d{9}$'
+          description: 手机号（11位中国手机号）
+          example: "13800138000"
+        email:
+          type: string
+          format: email
+          description: 邮箱
+          example: "zhangsan@example.com"
+        bio:
+          type: string
+          maxLength: 500
+          description: 个人简介
+          example: "热爱摄影和旅行"
+        avatar_url:
+          type: string
+          maxLength: 500
+          description: 头像URL
+          example: "https://example.com/avatars/user123.jpg"
+        location:
+          type: string
+          maxLength: 100
+          description: 所在地
+          example: "北京市朝阳区"
+        website:
+          type: string
+          maxLength: 200
+          description: 个人网站
+          example: "https://zhangsan.com"
+
+    PublicUserProfile:
+      type: object
+      properties:
+        user_id:
+          type: integer
+          description: 用户ID
+          example: 1
+        username:
+          type: string
+          description: 用户名
+          example: "zhangsan"
+        real_name:
+          type: string
+          description: 真实姓名
+          example: "张三"
+        bio:
+          type: string
+          description: 个人简介
+          example: "热爱摄影和旅行"
+        avatar_url:
+          type: string
+          description: 头像URL
+          example: "https://example.com/avatars/user123.jpg"
+        location:
+          type: string
+          description: 所在地
+          example: "北京市朝阳区"
+        website:
+          type: string
+          description: 个人网站
+          example: "https://zhangsan.com"
+        follower_count:
+          type: integer
+          description: 粉丝数
+          example: 1250
+        following_count:
+          type: integer
+          description: 关注数
+          example: 350
+        post_count:
+          type: integer
+          description: 帖子数
+          example: 89
+        total_likes:
+          type: integer
+          description: 获赞总数
+          example: 5680
+        create_time:
+          type: integer
+          format: int64
+          description: 注册时间（Unix时间戳）
+          example: 1759844400
+
     ImageUploadRequest:
       type: object
       required:
@@ -689,6 +784,152 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
         '401':
           description: 旧密码不正确
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/users/profile:
+    get:
+      tags:
+        - 用户管理
+      summary: 获取当前用户信息
+      description: 获取当前登录用户的完整个人信息
+      operationId: getUserProfile
+      security:
+        - BearerAuth: []
+      responses:
+        '200':
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/User'
+        '401':
+          description: 未授权
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      tags:
+        - 用户管理
+      summary: 更新用户信息
+      description: 更新当前登录用户的个人信息
+      operationId: updateUserProfile
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserProfileUpdateRequest'
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/User'
+        '400':
+          description: 请求参数错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 未授权
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/users/check-username:
+    get:
+      tags:
+        - 用户管理
+      summary: 检查用户名可用性
+      description: 检查用户名是否已被使用
+      operationId: checkUsernameAvailability
+      parameters:
+        - name: username
+          in: query
+          required: true
+          schema:
+            type: string
+            minLength: 3
+            maxLength: 50
+          description: 要检查的用户名
+          example: "newuser123"
+      responses:
+        '200':
+          description: 检查成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        type: object
+                        properties:
+                          available:
+                            type: boolean
+                            description: 用户名是否可用
+                            example: true
+                          username:
+                            type: string
+                            description: 检查的用户名
+                            example: "newuser123"
+        '400':
+          description: 请求参数错误
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/users/{user_id}:
+    get:
+      tags:
+        - 用户管理
+      summary: 获取用户公开信息
+      description: 获取指定用户的公开个人信息（不包括敏感信息）
+      operationId: getPublicUserProfile
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 用户ID
+          example: 1
+      responses:
+        '200':
+          description: 获取成功
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/SuccessResponse'
+                  - type: object
+                    properties:
+                      data:
+                        $ref: '#/components/schemas/PublicUserProfile'
+        '404':
+          description: 用户不存在
           content:
             application/json:
               schema:

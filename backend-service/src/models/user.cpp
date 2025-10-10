@@ -36,6 +36,9 @@ Json::Value User::toJson(bool includeSecrets) const {
     json["role"] = roleToString(role_);
     json["status"] = statusToString(status_);
     json["avatar_url"] = avatarUrl_;
+    json["bio"] = bio_;
+    json["gender"] = gender_;
+    json["location"] = location_;
     json["device_count"] = deviceCount_;
     json["create_time"] = static_cast<Json::Int64>(createTime_);
     json["update_time"] = static_cast<Json::Int64>(updateTime_);
@@ -95,6 +98,18 @@ User User::fromJson(const Json::Value& j) {
 
     if (j.isMember("avatar_url") && j["avatar_url"].isString()) {
         user.avatarUrl_ = j["avatar_url"].asString();
+    }
+
+    if (j.isMember("bio") && j["bio"].isString()) {
+        user.bio_ = j["bio"].asString();
+    }
+
+    if (j.isMember("gender") && j["gender"].isString()) {
+        user.gender_ = j["gender"].asString();
+    }
+
+    if (j.isMember("location") && j["location"].isString()) {
+        user.location_ = j["location"].asString();
     }
 
     if (j.isMember("device_count") && j["device_count"].isInt()) {
