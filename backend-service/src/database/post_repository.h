@@ -8,6 +8,7 @@
 #pragma once
 
 #include "models/post.h"
+#include <mysql/mysql.h>
 #include <optional>
 #include <vector>
 #include <string>
@@ -125,6 +126,38 @@ public:
      * @return 帖子总数
      */
     int getUserPostCount(int userId);
+
+    /**
+     * @brief 增加点赞数（原子操作）
+     * @param conn MySQL连接
+     * @param postId 帖子物理ID
+     * @return 成功返回true，失败返回false
+     */
+    bool incrementLikeCount(MYSQL* conn, int postId);
+
+    /**
+     * @brief 减少点赞数（原子操作）
+     * @param conn MySQL连接
+     * @param postId 帖子物理ID
+     * @return 成功返回true，失败返回false
+     */
+    bool decrementLikeCount(MYSQL* conn, int postId);
+
+    /**
+     * @brief 增加收藏数（原子操作）
+     * @param conn MySQL连接
+     * @param postId 帖子物理ID
+     * @return 成功返回true，失败返回false
+     */
+    bool incrementFavoriteCount(MYSQL* conn, int postId);
+
+    /**
+     * @brief 减少收藏数（原子操作）
+     * @param conn MySQL连接
+     * @param postId 帖子物理ID
+     * @return 成功返回true，失败返回false
+     */
+    bool decrementFavoriteCount(MYSQL* conn, int postId);
 
 private:
     /**

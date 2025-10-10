@@ -119,9 +119,75 @@ CREATE TABLE IF NOT EXISTS image_tags (
     UNIQUE KEY uk_image_tag (image_id, tag_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='图片标签关联表';
 
+-- Posts table for multi-image posts (v2.0.0)
+CREATE TABLE IF NOT EXISTS posts (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '物理ID（自增主键）',
+    post_id VARCHAR(36) NOT NULL UNIQUE COMMENT '业务逻辑ID（例：POST_2025Q4_ABC123）',
+    user_id BIGINT NOT NULL COMMENT '发布用户ID',
+    title VARCHAR(255) NOT NULL COMMENT '帖子标题',
+    description TEXT COMMENT '帖子配文',
+    image_count INT NOT NULL DEFAULT 0 COMMENT '图片数量（1-9张）',
+    like_count INT NOT NULL DEFAULT 0 COMMENT '点赞数（冗余字段）',
+    favorite_count INT NOT NULL DEFAULT 0 COMMENT '收藏数（冗余字段）',
+    view_count INT NOT NULL DEFAULT 0 COMMENT '浏览数',
+    status ENUM('PENDING', 'APPROVED', 'REJECTED') NOT NULL DEFAULT 'APPROVED' COMMENT '审核状态',
+    create_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    update_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+
+    -- Foreign key
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+
+    -- Indexes for performance
+    INDEX idx_post_id (post_id),
+    INDEX idx_user_id (user_id),
+    INDEX idx_create_time (create_time),
+    INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='帖子表';
+
+-- Likes table for post likes (v2.2.0)
+CREATE TABLE IF NOT EXISTS likes (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '物理ID（自增主键）',
+    user_id BIGINT NOT NULL COMMENT '点赞用户ID',
+    post_id BIGINT NOT NULL COMMENT '被点赞帖子ID（关联posts表的物理ID）',
+    create_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '点赞时间',
+
+    -- Foreign keys
+    CONSTRAINT fk_likes_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_likes_post FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
+
+    -- Unique constraint to prevent duplicate likes
+    UNIQUE KEY uk_user_post (user_id, post_id),
+
+    -- Indexes for performance
+    INDEX idx_post_id (post_id),
+    INDEX idx_user_create (user_id, create_time DESC)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='点赞表';
+
+-- Favorites table for post favorites (v2.2.0)
+CREATE TABLE IF NOT EXISTS favorites (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '物理ID（自增主键）',
+    user_id BIGINT NOT NULL COMMENT '收藏用户ID',
+    post_id BIGINT NOT NULL COMMENT '被收藏帖子ID（关联posts表的物理ID）',
+    create_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '收藏时间',
+
+    -- Foreign keys
+    CONSTRAINT fk_favorites_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_favorites_post FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
+
+    -- Unique constraint to prevent duplicate favorites
+    UNIQUE KEY uk_user_post (user_id, post_id),
+
+    -- Indexes for performance
+    INDEX idx_post_id (post_id),
+    INDEX idx_user_create (user_id, create_time DESC)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='收藏表';
+
 -- Show table structure
 SHOW TABLES;
 DESCRIBE users;
 DESCRIBE images;
 DESCRIBE tags;
 DESCRIBE image_tags;
+DESCRIBE posts;
+DESCRIBE likes;
+DESCRIBE favorites;
