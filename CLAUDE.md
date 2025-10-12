@@ -42,7 +42,7 @@
 
 **技术栈**: C++17, MySQL 8.0, cpp-httplib 0.11.0, jwt-cpp 0.6.0, JsonCpp 1.9.5, OpenSSL 1.1.1, spdlog 1.9.2
 
-**当前版本**: v2.1.0
+**当前版本**: v2.3.0
 
 **当前状态**:
 - ✅ 用户认证系统（注册、登录、JWT令牌管理、密码修改）
@@ -50,8 +50,8 @@
 - ✅ 多图片帖子系统（v2.0.0 - 1-9张图片发布、编辑、删除）
 - ✅ 图片管理系统（图片压缩、缩略图生成、Feed推荐）
 - ✅ 标签系统（帖子标签关联、标签管理）
+- ✅ **分享系统（v2.3.0 - 短链接生成、三端Deep Link、帖子分享）**
 - ⏳ 社交互动系统（点赞、收藏、关注、评论 - 规划中）
-- ⏳ 分享系统（Deep Link唤醒、分享统计 - 规划中）
 
 ## 构建命令
 
@@ -275,13 +275,13 @@ MYSQL* conn = guard.get();
 - `images` - 图片信息（包含原图和缩略图路径）
 - `tags` - 标签信息
 - `post_tags` - 帖子标签关联表
+- `share_links` - 分享链接表（v2.3.0新增：short_code, target_type, target_id, creator_id, expire_time）
 
 **未来计划的表：**
 - `likes` - 点赞信息
 - `favorites` - 收藏信息
 - `follows` - 关注关系
 - `comments` - 评论信息
-- `share_links` - 分享链接
 - `user_stats` - 用户统计数据
 
 数据库名：`knot_image_sharing`
@@ -318,6 +318,8 @@ Logger::fatal("致命错误");
 - `[104]Apifox测试流程-BUG修复验证.md` - API测试流程和Bug修复
 - `[105]阶段C-2-多图片帖子系统.md` - 多图片帖子系统（v2.0.0）
 - `[106]用户信息管理功能完善-实施计划.md` - 用户信息管理（v2.1.0）
+- `[108]阶段D-2-互动系统关注功能实现计划.md` - 关注系统（v2.2.0）
+- `[109]阶段D-3-分享系统实现计划.md` - 分享系统（v2.3.0，~4200行）
 
 **技术专题（200-299）：**
 - `[200]数据库设计文档.md` - 数据库设计详解
@@ -418,6 +420,39 @@ nohup ./start-api-docs.sh > api-docs.log 2>&1 &
    - 或者打开开发者工具，右键刷新按钮选择"清空缓存并硬性重新加载"
 
 ## API版本历史
+
+### v2.3.0 (2025-10-11) - 分享系统
+**新增功能：**
+- ✅ 短链接生成系统
+  - POST /api/v1/posts/:post_id/share - 创建帖子分享链接
+  - GET /api/v1/share/:code - 解析分享链接获取帖子信息（公开接口）
+- ✅ 雪花ID算法 + Base62编码
+- ✅ Deep Link支持（iOS/Android/HarmonyOS三端）
+  - iOS Universal Links配置
+  - Android App Links配置
+  - HarmonyOS Deep Linking配置（自定义Scheme）
+  - HarmonyOS App Linking配置（域名验证）
+
+**数据库变更：**
+- 新增表：`share_links`（7字段，4索引，2外键）
+- 字段：short_code, target_type, target_id, creator_id, create_time, expire_time
+- 索引：idx_short_code(唯一), idx_target, idx_creator, idx_create_time
+- 外键级联删除：删除帖子自动删除分享链接
+
+**技术亮点：**
+- 8位Base62短码，62^8 ≈ 218万亿种可能
+- 去重逻辑：同一帖子返回相同短链接
+- 支持短链接过期机制
+- 三端Deep Link统一配置方案
+
+**配置文件：**
+- `.well-known/apple-app-site-association`（iOS）
+- `.well-known/assetlinks.json`（Android）
+- `.well-known/applinking.json`（HarmonyOS）
+
+**文档：** `[109]阶段D-3-分享系统实现计划.md`（~4200行，含完整技术设计和实施指南）
+
+---
 
 ### v2.1.0 (2025-10-09)
 **新增功能：**
@@ -586,8 +621,8 @@ cd backend-service/test
 | 用户信息管理 | ✅ 已完成 (v2.1.0) | 4个 | users |
 | 多图片帖子 | ✅ 已完成 (v2.0.0) | 8个 | posts, images |
 | 标签系统 | ✅ 已完成 | 4个 | tags, post_tags |
+| 分享系统 | ✅ 已完成 (v2.3.0) | 2个 | share_links |
 | 社交互动 | ⏳ 规划中 | 预计12个 | likes, favorites, follows, comments |
-| 分享系统 | ⏳ 规划中 | 预计4个 | share_links |
 
 ### 性能指标
 
