@@ -445,28 +445,77 @@ void PostHandler::handleAddImageToPost(const httplib::Request& req, httplib::Res
         // 2. 获取post_id
         std::string postId = req.path_params.at("post_id");
 
-        // 3. 解析请求体（假设前端已上传图片到临时目录）
-        Json::Value requestBody;
-        if (!parseJsonBody(req.body, requestBody)) {
-            sendErrorResponse(res, 400, "无效的JSON格式");
-            return;
-        }
+        // 3. 检查是否是multipart/form-data
+        if (req.is_multipart_form_data()) {
+            // 处理multipart/form-data格式
+            if (!req.form.has_file("imageFile")) {
+                sendErrorResponse(res, 400, "缺少图片文件");
+                return;
+            }
 
-        // 4. 获取图片文件路径
-        std::string imageFile = requestBody.get("image_file", "").asString();
-        if (imageFile.empty()) {
-            sendErrorResponse(res, 400, "缺少图片文件路径");
-            return;
-        }
+            auto imageData = req.form.get_file("imageFile");
 
-        // 5. 调用Service添加图片
-        bool success = postService_->addImageToPost(postId, userId, imageFile);
+            // 验证文件类型
+            if (imageData.content_type.find("image/") != 0) {
+                sendErrorResponse(res, 400, "只能上传图片文件");
+                return;
+            }
 
-        // 6. 返回结果
-        if (success) {
-            sendSuccessResponse(res, "图片添加成功");
+            // 验证文件大小（最大5MB）
+            if (imageData.content.size() > 5 * 1024 * 1024) {
+                sendErrorResponse(res, 400, "图片文件大小不能超过5MB");
+                return;
+            }
+
+            // 保存文件到临时目录
+            std::string savedPath = saveUploadedFile(
+                imageData.content,
+                imageData.filename,
+                imageData.content_type
+            );
+
+            if (savedPath.empty()) {
+                sendErrorResponse(res, 500, "保存图片文件失败");
+                return;
+            }
+
+            // 调用Service添加图片
+            bool success = postService_->addImageToPost(postId, userId, savedPath);
+
+            // 清理临时文件
+            std::remove(savedPath.c_str());
+
+            // 返回结果
+            if (success) {
+                sendSuccessResponse(res, "图片添加成功");
+            } else {
+                sendErrorResponse(res, 400, "添加失败");
+            }
+
         } else {
-            sendErrorResponse(res, 400, "添加失败");
+            // 处理JSON格式（用于向后兼容）
+            Json::Value requestBody;
+            if (!parseJsonBody(req.body, requestBody)) {
+                sendErrorResponse(res, 400, "无效的JSON格式");
+                return;
+            }
+
+            // 获取图片文件路径
+            std::string imageFile = requestBody.get("imageFile", "").asString();
+            if (imageFile.empty()) {
+                sendErrorResponse(res, 400, "缺少图片文件路径");
+                return;
+            }
+
+            // 调用Service添加图片
+            bool success = postService_->addImageToPost(postId, userId, imageFile);
+
+            // 返回结果
+            if (success) {
+                sendSuccessResponse(res, "图片添加成功");
+            } else {
+                sendErrorResponse(res, 400, "添加失败");
+            }
         }
 
     } catch (const std::exception& e) {
@@ -538,13 +587,13 @@ void PostHandler::handleReorderImages(const httplib::Request& req, httplib::Resp
         }
 
         // 4. 获取图片ID列表
-        if (!requestBody.isMember("image_ids") || !requestBody["image_ids"].isArray()) {
-            sendErrorResponse(res, 400, "缺少image_ids参数");
+        if (!requestBody.isMember("imageIds") || !requestBody["imageIds"].isArray()) {
+            sendErrorResponse(res, 400, "缺少imageIds参数");
             return;
         }
 
         std::vector<std::string> imageIds;
-        for (const auto& imageId : requestBody["image_ids"]) {
+        for (const auto& imageId : requestBody["imageIds"]) {
             imageIds.push_back(imageId.asString());
         }
 

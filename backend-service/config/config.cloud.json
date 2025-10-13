@@ -10,7 +10,7 @@
   "database": {
     "host": "8.138.115.164",
     "port": 3306,
-    "database": "shared_parking",
+    "database": "knot_image_sharing",
     "username": "root",
     "password": "Xzk200411.",
     "pool_size": 10,

@@ -23,17 +23,28 @@ JWTManager::JWTManager() {
         issuer_ = ConfigManager::getInstance().get<std::string>("jwt.issuer");
         accessTokenExpiry_ = ConfigManager::getInstance().get<int>("jwt.expires_in");
         refreshTokenExpiry_ = ConfigManager::getInstance().get<int>("jwt.refresh_expires_in");
-        
+
+        // 验证配置是否有效
+        if (secret_.empty()) {
+            Logger::error("JWT secret is empty, using default");
+            secret_ = "default_secret_change_in_production";
+        }
+        if (issuer_.empty()) {
+            Logger::error("JWT issuer is empty, using default");
+            issuer_ = "shared-parking-auth";
+        }
+
         Logger::info("JWTManager initialized successfully");
         Logger::debug("JWT issuer: " + issuer_);
+        Logger::debug("JWT secret (first 10 chars): " + secret_.substr(0, std::min(10, static_cast<int>(secret_.length()))));
         Logger::debug("Access token expiry: " + std::to_string(accessTokenExpiry_) + " seconds");
         Logger::debug("Refresh token expiry: " + std::to_string(refreshTokenExpiry_) + " seconds");
-        
+
     } catch (const std::exception& e) {
         Logger::error("Failed to initialize JWTManager: " + std::string(e.what()));
-        // 使用默认值
+        // 使用默认值 - 注意:issuer必须与配置文件中的值一致
         secret_ = "default_secret_change_in_production";
-        issuer_ = "shared-parking";
+        issuer_ = "shared-parking-auth";  // ⚠️ 修复:与config.json保持一致
         accessTokenExpiry_ = 3600;      // 1 小时
         refreshTokenExpiry_ = 86400;    // 24 小时
         Logger::warning("Using default JWT configuration");
@@ -82,21 +93,27 @@ bool JWTManager::validateToken(const std::string& token) {
             Logger::warning("Empty token provided for validation");
             return false;
         }
-        
+
+        Logger::debug("Validating token (first 30 chars): " + token.substr(0, std::min(30, static_cast<int>(token.length()))) + "...");
+        Logger::debug("Using secret (first 10 chars): " + secret_.substr(0, std::min(10, static_cast<int>(secret_.length()))));
+        Logger::debug("Expected issuer: " + issuer_);
+
+        // 先解码token查看内容
+        auto decoded = jwt::decode<jwt::traits::open_source_parsers_jsoncpp>(token);
+        std::string tokenIssuer = decoded.get_issuer();
+        Logger::debug("Token issuer: " + tokenIssuer);
+
         // 创建验证器
         auto verifier = jwt::verify<jwt::traits::open_source_parsers_jsoncpp>()
             .allow_algorithm(jwt::algorithm::hs256{secret_})    // 允许的算法
             .with_issuer(issuer_);                              // 验证签发者
-        
-        // 解码令牌
-        auto decoded = jwt::decode<jwt::traits::open_source_parsers_jsoncpp>(token);
-        
+
         // 验证令牌
         verifier.verify(decoded);
-        
+
         Logger::debug("Token validation successful");
         return true;
-        
+
     } catch (const jwt::error::token_verification_exception& e) {
         Logger::warning("Token verification failed: " + std::string(e.what()));
         return false;
