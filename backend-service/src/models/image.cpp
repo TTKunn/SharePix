@@ -6,6 +6,7 @@
  */
 
 #include "models/image.h"
+#include "utils/url_helper.h"
 
 // 默认构造函数
 Image::Image()
@@ -29,8 +30,11 @@ Json::Value Image::toJson() const {
     json["post_id"] = postId_;
     json["display_order"] = displayOrder_;
     json["user_id"] = userId_;
-    json["file_url"] = fileUrl_;
-    json["thumbnail_url"] = thumbnailUrl_;
+    
+    // 使用UrlHelper为图片路径添加服务器URL前缀
+    json["file_url"] = UrlHelper::toFullUrl(fileUrl_);
+    json["thumbnail_url"] = UrlHelper::toFullUrl(thumbnailUrl_);
+    
     json["file_size"] = static_cast<Json::Int64>(fileSize_);
     json["width"] = width_;
     json["height"] = height_;

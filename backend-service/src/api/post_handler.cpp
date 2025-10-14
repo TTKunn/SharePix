@@ -7,6 +7,7 @@
 
 #include "api/post_handler.h"
 #include "utils/logger.h"
+#include "utils/url_helper.h"
 #include <json/json.h>
 #include <fstream>
 #include <sstream>
@@ -75,8 +76,9 @@ Json::Value PostHandler::imageToJson(const Image& image) {
     Json::Value json;
     json["image_id"] = image.getImageId();
     json["display_order"] = image.getDisplayOrder();
-    json["file_url"] = image.getFileUrl();
-    json["thumbnail_url"] = image.getThumbnailUrl();
+    // 统一为返回的路径添加服务器URL前缀
+    json["file_url"] = UrlHelper::toFullUrl(image.getFileUrl());
+    json["thumbnail_url"] = UrlHelper::toFullUrl(image.getThumbnailUrl());
     json["file_size"] = static_cast<Json::Int64>(image.getFileSize());
     json["width"] = image.getWidth();
     json["height"] = image.getHeight();
@@ -87,28 +89,8 @@ Json::Value PostHandler::imageToJson(const Image& image) {
 
 // 将Post对象转换为JSON
 Json::Value PostHandler::postToJson(const Post& post, bool includeImages) {
-    Json::Value json;
-    json["post_id"] = post.getPostId();
-    json["user_id"] = post.getUserId();
-    json["title"] = post.getTitle();
-    json["description"] = post.getDescription();
-    json["image_count"] = post.getImageCount();
-    json["like_count"] = post.getLikeCount();
-    json["favorite_count"] = post.getFavoriteCount();
-    json["view_count"] = post.getViewCount();
-    json["status"] = Post::statusToString(post.getStatus());
-    json["create_time"] = static_cast<Json::Int64>(post.getCreateTime());
-    json["update_time"] = static_cast<Json::Int64>(post.getUpdateTime());
-    
-    if (includeImages) {
-        Json::Value imagesArray(Json::arrayValue);
-        for (const auto& image : post.getImages()) {
-            imagesArray.append(imageToJson(image));
-        }
-        json["images"] = imagesArray;
-    }
-    
-    return json;
+    // 直接使用Post模型的toJson方法，它内部会调用Image::toJson()添加URL前缀
+    return post.toJson(includeImages);
 }
 
 // POST /api/v1/posts - 创建帖子

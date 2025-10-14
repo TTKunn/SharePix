@@ -12,6 +12,30 @@ info:
     - Feed流推荐
     - 点赞与收藏功能（v2.2.0）
     - 分享系统与短链接（v2.3.0）
+    - **图片URL自动前缀（v2.4.0）**
+
+    ## 🔔 重要说明：图片URL自动前缀（v2.4.0新增）
+
+    **所有返回的图片路径已自动添加服务器URL前缀**，客户端可直接使用返回的完整URL访问图片。
+
+    **影响字段**：
+    - `file_url` - 原图URL
+    - `thumbnail_url` - 缩略图URL  
+    - `cover_image_url` - 封面图URL
+    - `avatar_url` - 用户头像URL
+
+    **返回格式示例**：
+    ```json
+    {
+      "file_url": "http://8.138.115.164:8080/uploads/images/IMG_2025Q4_xxx.jpg",
+      "thumbnail_url": "http://8.138.115.164:8080/uploads/thumbnails/IMG_2025Q4_xxx_thumb.jpg"
+    }
+    ```
+
+    **配置说明**：
+    - 生产环境：自动使用 `http://8.138.115.164:8080` 作为前缀
+    - 开发环境：可在 `config.json` 中配置 `server.base_url` 自定义前缀
+    - 相对路径模式：设置 `server.base_url: ""` 返回相对路径（用于本地开发）
 
     ## 安全说明
     - 密码使用PBKDF2-HMAC-SHA256加密（100,000次迭代）
@@ -19,7 +43,7 @@ info:
     - 所有数据库查询使用预编译语句防止SQL注入
 
     ## 版本更新
-    - v2.4.0: 完善API文档，统一命名规范
+    - v2.4.0: 图片URL自动前缀功能，完善API文档
     - v2.3.0: 新增分享系统（短链接、Deep Link）
     - v2.2.0: 新增点赞和收藏功能
     - v2.1.0: 新增用户信息管理功能
@@ -105,8 +129,8 @@ components:
           example: "active"
         avatar_url:
           type: string
-          description: 头像URL
-          example: ""
+          description: 头像URL（v2.4.0起自动添加服务器前缀）
+          example: "http://8.138.115.164:8080/uploads/avatars/user123.jpg"
         device_count:
           type: integer
           description: 设备数量
@@ -147,12 +171,12 @@ components:
           example: "今天拍摄的日落"
         file_url:
           type: string
-          description: 图片文件URL
-          example: "/uploads/images/abc123.jpg"
+          description: 图片文件URL（v2.4.0起自动添加服务器前缀）
+          example: "http://8.138.115.164:8080/uploads/images/IMG_2025Q4_abc123.jpg"
         thumbnail_url:
           type: string
-          description: 缩略图URL
-          example: "/uploads/thumbnails/abc123_thumb.jpg"
+          description: 缩略图URL（v2.4.0起自动添加服务器前缀）
+          example: "http://8.138.115.164:8080/uploads/thumbnails/IMG_2025Q4_abc123_thumb.jpg"
         file_size:
           type: integer
           description: 文件大小（字节）
@@ -538,7 +562,7 @@ components:
         avatar_url:
           type: string
           maxLength: 500
-          description: 头像URL
+          description: 头像URL（v2.4.0起自动添加服务器前缀）
           example: "https://example.com/avatars/user123.jpg"
         location:
           type: string
@@ -572,8 +596,8 @@ components:
           example: "热爱摄影和旅行"
         avatar_url:
           type: string
-          description: 头像URL
-          example: "https://example.com/avatars/user123.jpg"
+          description: 头像URL（v2.4.0起自动添加服务器前缀）
+          example: "http://8.138.115.164:8080/uploads/avatars/user123.jpg"
         location:
           type: string
           description: 所在地

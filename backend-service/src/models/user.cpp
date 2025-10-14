@@ -6,6 +6,7 @@
  */
 
 #include "models/user.h"
+#include "utils/url_helper.h"
 #include <regex>
 #include <sstream>
 #include <iomanip>
@@ -35,7 +36,10 @@ Json::Value User::toJson(bool includeSecrets) const {
     json["email"] = email_;
     json["role"] = roleToString(role_);
     json["status"] = statusToString(status_);
-    json["avatar_url"] = avatarUrl_;
+    
+    // 使用UrlHelper为头像URL添加服务器URL前缀
+    json["avatar_url"] = UrlHelper::toFullUrl(avatarUrl_);
+    
     json["bio"] = bio_;
     json["gender"] = gender_;
     json["location"] = location_;

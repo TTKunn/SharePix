@@ -6,6 +6,7 @@
  */
 
 #include "models/post.h"
+#include "utils/url_helper.h"
 
 // 默认构造函数
 Post::Post()
@@ -168,7 +169,8 @@ std::string Post::getCoverImageUrl() const {
     if (images_.empty()) {
         return "";
     }
-    return images_[0].getThumbnailUrl();
+    // 使用UrlHelper为缩略图URL添加服务器URL前缀
+    return UrlHelper::toFullUrl(images_[0].getThumbnailUrl());
 }
 
 // 将PostStatus转换为字符串

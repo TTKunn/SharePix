@@ -10,6 +10,7 @@
 #include "../database/user_repository.h"
 #include "../security/jwt_manager.h"
 #include "../utils/logger.h"
+#include "../utils/url_helper.h"
 #include <sstream>
 
 // 构造函数
@@ -349,6 +350,10 @@ void AuthHandler::handleGetProfile(const httplib::Request& req, httplib::Respons
 
     // 4. 返回用户信息（包含所有字段）
     Json::Value userData = user->toJson();
+    // 兼容旧路径字段可能直接读取model的原始avatar_url，确保添加URL前缀
+    if (userData.isMember("avatar_url") && userData["avatar_url"].isString()) {
+        userData["avatar_url"] = UrlHelper::toFullUrl(userData["avatar_url"].asString());
+    }
     // 移除敏感字段
     userData.removeMember("password");
     userData.removeMember("salt");
@@ -406,6 +411,9 @@ void AuthHandler::handleUpdateProfile(const httplib::Request& req, httplib::Resp
 
     // 6. 返回更新后的用户信息
     Json::Value userData = result.user.toJson();
+    if (userData.isMember("avatar_url") && userData["avatar_url"].isString()) {
+        userData["avatar_url"] = UrlHelper::toFullUrl(userData["avatar_url"].asString());
+    }
     // 移除敏感字段
     userData.removeMember("password");
     userData.removeMember("salt");
@@ -444,7 +452,7 @@ void AuthHandler::handleGetUserPublicInfo(const httplib::Request& req, httplib::
     publicData["user_id"] = user->getUserId();
     publicData["username"] = user->getUsername();
     publicData["real_name"] = user->getRealName();
-    publicData["avatar_url"] = user->getAvatarUrl();
+    publicData["avatar_url"] = UrlHelper::toFullUrl(user->getAvatarUrl());
     publicData["bio"] = user->getBio();
     publicData["gender"] = user->getGender();
     publicData["location"] = user->getLocation();
