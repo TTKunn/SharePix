@@ -38,6 +38,13 @@ public:
      */
     void registerRoutes(httplib::Server& server);
     
+    /**
+     * @brief 注册通配符路由（必须最后注册以避免覆盖其他路由）
+     * 
+     * @param server HTTP服务器实例
+     */
+    void registerWildcardRoutes(httplib::Server& server);
+    
 private:
     /**
      * @brief 处理用户注册请求

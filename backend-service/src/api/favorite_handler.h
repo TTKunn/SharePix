@@ -50,4 +50,18 @@ private:
      * @param res HTTP响应
      */
     void handleUnfavorite(const httplib::Request& req, httplib::Response& res);
+
+    /**
+     * @brief GET /api/v1/posts/:post_id/favorite/status - 查询收藏状态
+     * @param req HTTP请求
+     * @param res HTTP响应
+     */
+    void handleGetFavoriteStatus(const httplib::Request& req, httplib::Response& res);
+
+    /**
+     * @brief GET /api/v1/users/favorites - 获取用户收藏列表
+     * @param req HTTP请求
+     * @param res HTTP响应
+     */
+    void handleGetUserFavorites(const httplib::Request& req, httplib::Response& res);
 };

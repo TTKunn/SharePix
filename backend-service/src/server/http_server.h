@@ -90,6 +90,11 @@ private:
     void setupErrorHandlers();
     
     /**
+     * @brief Setup static file serving
+     */
+    void setupStaticFiles();
+    
+    /**
      * @brief Health check endpoint handler
      */
     void handleHealthCheck(const httplib::Request& req, httplib::Response& res);

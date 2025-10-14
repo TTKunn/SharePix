@@ -123,7 +123,7 @@ void HttpServer::setupMiddleware() {
 }
 
 void HttpServer::setupRoutes() {
-    // 注册认证相关路由
+    // 注册认证相关路由（不包含通配符路由）
     authHandler_->registerRoutes(*server_);
 
     // 注册图片相关路由
@@ -137,6 +137,12 @@ void HttpServer::setupRoutes() {
 
     // 注册帖子相关路由
     postHandler_->registerRoutes(*server_);
+    
+    // 注册认证的通配符路由（必须最后注册，避免覆盖其他/users/*路由）
+    authHandler_->registerWildcardRoutes(*server_);
+
+    // 设置静态文件服务
+    setupStaticFiles();
 
     // Health check endpoint
     server_->Get("/health", [this](const httplib::Request& req, httplib::Response& res) {
@@ -238,6 +244,55 @@ void HttpServer::handleHealthCheck(const httplib::Request& req, httplib::Respons
 
     res.set_content(jsonStr, "application/json");
     res.status = (response["status"].asString() == "healthy") ? 200 : 503;
+}
+
+void HttpServer::setupStaticFiles() {
+    try {
+        // 获取静态文件配置
+        auto& config = ConfigManager::getInstance();
+        std::string staticRoot = config.get<std::string>("static.root", "./uploads");
+        bool enableCache = config.get<bool>("static.enable_cache", true);
+        int cacheMaxAge = config.get<int>("static.cache_max_age", 3600);
+
+        // 规范化路径，确保路径存在
+        if (staticRoot.back() != '/') {
+            staticRoot += '/';
+        }
+
+        // 创建必要的目录
+        std::string imagesDir = staticRoot + "images";
+        std::string thumbnailsDir = staticRoot + "thumbnails";
+
+        // 创建目录（如果不存在）
+        int result1 = system(("mkdir -p " + imagesDir + " 2>/dev/null").c_str());
+        int result2 = system(("mkdir -p " + thumbnailsDir + " 2>/dev/null").c_str());
+        (void)result1; (void)result2; // 避免编译器警告
+
+        // 设置静态文件挂载点
+        server_->set_mount_point("/uploads/images", imagesDir);
+        server_->set_mount_point("/uploads/thumbnails", thumbnailsDir);
+
+        // 设置MIME类型映射
+        server_->set_file_extension_and_mimetype_mapping("jpg", "image/jpeg");
+        server_->set_file_extension_and_mimetype_mapping("jpeg", "image/jpeg");
+        server_->set_file_extension_and_mimetype_mapping("png", "image/png");
+        server_->set_file_extension_and_mimetype_mapping("webp", "image/webp");
+
+        // 设置缓存头处理（仅对静态文件）
+        if (enableCache) {
+            // 注意：这里不能再次设置 post_routing_handler，因为会覆盖CORS设置
+            // 缓存头已在现有的 post_routing_handler 中统一处理
+        }
+
+        Logger::info("Static files configured successfully:");
+        Logger::info("  - Root directory: " + staticRoot);
+        Logger::info("  - Images: /uploads/images -> " + imagesDir);
+        Logger::info("  - Thumbnails: /uploads/thumbnails -> " + thumbnailsDir);
+        Logger::info("  - Cache enabled: " + std::string(enableCache ? "yes" : "no"));
+
+    } catch (const std::exception& e) {
+        Logger::error("Failed to setup static files: " + std::string(e.what()));
+    }
 }
 
 void HttpServer::handleMetrics(const httplib::Request& req, httplib::Response& res) {

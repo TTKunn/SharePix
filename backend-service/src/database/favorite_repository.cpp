@@ -370,3 +370,215 @@ std::vector<Favorite> FavoriteRepository::findByUserId(MYSQL* conn, int userId, 
         return favorites;
     }
 }
+
+// 获取用户收藏的帖子列表（带分页）
+std::vector<Post> FavoriteRepository::getUserFavorites(MYSQL* conn, int userId, int page, int pageSize) {
+    std::vector<Post> posts;
+
+    try {
+        if (!conn) {
+            Logger::error("Database connection is null");
+            return posts;
+        }
+
+        MySQLStatement stmt(conn);
+        if (!stmt.isValid()) {
+            return posts;
+        }
+
+        // 计算偏移量
+        int offset = (page - 1) * pageSize;
+
+        // SQL查询：联表查询收藏的帖子
+        const char* query = R"(
+            SELECT p.id, p.post_id, p.user_id, p.title, p.description, 
+                   p.image_count, p.like_count, p.favorite_count, p.view_count, 
+                   p.create_time, p.update_time 
+            FROM posts p
+            INNER JOIN favorites f ON p.id = f.post_id
+            WHERE f.user_id = ?
+            ORDER BY f.create_time DESC
+            LIMIT ? OFFSET ?
+        )";
+
+        if (mysql_stmt_prepare(stmt.get(), query, strlen(query)) != 0) {
+            Logger::error("Failed to prepare statement: " + std::string(mysql_stmt_error(stmt.get())));
+            return posts;
+        }
+
+        // 绑定参数
+        MYSQL_BIND bind[3];
+        memset(bind, 0, sizeof(bind));
+
+        bind[0].buffer_type = MYSQL_TYPE_LONG;
+        bind[0].buffer = &userId;
+
+        bind[1].buffer_type = MYSQL_TYPE_LONG;
+        bind[1].buffer = &pageSize;
+
+        bind[2].buffer_type = MYSQL_TYPE_LONG;
+        bind[2].buffer = &offset;
+
+        if (mysql_stmt_bind_param(stmt.get(), bind) != 0) {
+            Logger::error("Failed to bind parameters: " + std::string(mysql_stmt_error(stmt.get())));
+            return posts;
+        }
+
+        if (mysql_stmt_execute(stmt.get()) != 0) {
+            Logger::error("Failed to execute statement: " + std::string(mysql_stmt_error(stmt.get())));
+            return posts;
+        }
+
+        // 绑定结果
+        MYSQL_BIND result[11];
+        memset(result, 0, sizeof(result));
+
+        long long id, user_id, image_count, like_count, favorite_count, view_count, create_time, update_time;
+        char post_id[64], title[512], description[2048];
+        unsigned long post_id_len, title_len, description_len;
+        bool post_id_null, title_null, description_null;
+
+        result[0].buffer_type = MYSQL_TYPE_LONGLONG;
+        result[0].buffer = &id;
+
+        result[1].buffer_type = MYSQL_TYPE_STRING;
+        result[1].buffer = post_id;
+        result[1].buffer_length = sizeof(post_id);
+        result[1].length = &post_id_len;
+        result[1].is_null = &post_id_null;
+
+        result[2].buffer_type = MYSQL_TYPE_LONGLONG;
+        result[2].buffer = &user_id;
+
+        result[3].buffer_type = MYSQL_TYPE_STRING;
+        result[3].buffer = title;
+        result[3].buffer_length = sizeof(title);
+        result[3].length = &title_len;
+        result[3].is_null = &title_null;
+
+        result[4].buffer_type = MYSQL_TYPE_STRING;
+        result[4].buffer = description;
+        result[4].buffer_length = sizeof(description);
+        result[4].length = &description_len;
+        result[4].is_null = &description_null;
+
+        result[5].buffer_type = MYSQL_TYPE_LONGLONG;
+        result[5].buffer = &image_count;
+
+        result[6].buffer_type = MYSQL_TYPE_LONGLONG;
+        result[6].buffer = &like_count;
+
+        result[7].buffer_type = MYSQL_TYPE_LONGLONG;
+        result[7].buffer = &favorite_count;
+
+        result[8].buffer_type = MYSQL_TYPE_LONGLONG;
+        result[8].buffer = &view_count;
+
+        result[9].buffer_type = MYSQL_TYPE_LONGLONG;
+        result[9].buffer = &create_time;
+
+        result[10].buffer_type = MYSQL_TYPE_LONGLONG;
+        result[10].buffer = &update_time;
+
+        if (mysql_stmt_bind_result(stmt.get(), result) != 0) {
+            Logger::error("Failed to bind result: " + std::string(mysql_stmt_error(stmt.get())));
+            return posts;
+        }
+
+        if (mysql_stmt_store_result(stmt.get()) != 0) {
+            Logger::error("Failed to store result: " + std::string(mysql_stmt_error(stmt.get())));
+            return posts;
+        }
+
+        // 获取所有结果
+        while (mysql_stmt_fetch(stmt.get()) == 0) {
+            Post post;
+            post.setId(static_cast<int>(id));
+            post.setPostId(std::string(post_id, post_id_len));
+            post.setUserId(static_cast<int>(user_id));
+            if (!title_null) post.setTitle(std::string(title, title_len));
+            if (!description_null) post.setDescription(std::string(description, description_len));
+            post.setImageCount(static_cast<int>(image_count));
+            post.setLikeCount(static_cast<int>(like_count));
+            post.setFavoriteCount(static_cast<int>(favorite_count));
+            post.setViewCount(static_cast<int>(view_count));
+            post.setCreateTime(static_cast<std::time_t>(create_time));
+            post.setUpdateTime(static_cast<std::time_t>(update_time));
+            posts.push_back(post);
+        }
+
+        Logger::info("Found " + std::to_string(posts.size()) + " favorited posts for user " + std::to_string(userId));
+        return posts;
+
+    } catch (const std::exception& e) {
+        Logger::error("Exception in FavoriteRepository::getUserFavorites: " + std::string(e.what()));
+        return posts;
+    }
+}
+
+// 获取用户收藏的帖子总数
+int FavoriteRepository::getUserFavoriteCount(MYSQL* conn, int userId) {
+    try {
+        if (!conn) {
+            Logger::error("Database connection is null");
+            return 0;
+        }
+
+        MySQLStatement stmt(conn);
+        if (!stmt.isValid()) {
+            return 0;
+        }
+
+        const char* query = "SELECT COUNT(*) FROM favorites WHERE user_id = ?";
+
+        if (mysql_stmt_prepare(stmt.get(), query, strlen(query)) != 0) {
+            Logger::error("Failed to prepare statement: " + std::string(mysql_stmt_error(stmt.get())));
+            return 0;
+        }
+
+        // 绑定参数
+        MYSQL_BIND bind[1];
+        memset(bind, 0, sizeof(bind));
+
+        bind[0].buffer_type = MYSQL_TYPE_LONG;
+        bind[0].buffer = &userId;
+
+        if (mysql_stmt_bind_param(stmt.get(), bind) != 0) {
+            Logger::error("Failed to bind parameters: " + std::string(mysql_stmt_error(stmt.get())));
+            return 0;
+        }
+
+        if (mysql_stmt_execute(stmt.get()) != 0) {
+            Logger::error("Failed to execute statement: " + std::string(mysql_stmt_error(stmt.get())));
+            return 0;
+        }
+
+        // 绑定结果
+        MYSQL_BIND result[1];
+        memset(result, 0, sizeof(result));
+
+        long long count = 0;
+        result[0].buffer_type = MYSQL_TYPE_LONGLONG;
+        result[0].buffer = &count;
+
+        if (mysql_stmt_bind_result(stmt.get(), result) != 0) {
+            Logger::error("Failed to bind result: " + std::string(mysql_stmt_error(stmt.get())));
+            return 0;
+        }
+
+        if (mysql_stmt_store_result(stmt.get()) != 0) {
+            Logger::error("Failed to store result: " + std::string(mysql_stmt_error(stmt.get())));
+            return 0;
+        }
+
+        if (mysql_stmt_fetch(stmt.get()) == 0) {
+            return static_cast<int>(count);
+        }
+
+        return 0;
+
+    } catch (const std::exception& e) {
+        Logger::error("Exception in FavoriteRepository::getUserFavoriteCount: " + std::string(e.what()));
+        return 0;
+    }
+}

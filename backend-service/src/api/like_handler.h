@@ -50,4 +50,11 @@ private:
      * @param res HTTP响应
      */
     void handleUnlike(const httplib::Request& req, httplib::Response& res);
+
+    /**
+     * @brief GET /api/v1/posts/:post_id/like/status - 查询点赞状态
+     * @param req HTTP请求
+     * @param res HTTP响应
+     */
+    void handleGetLikeStatus(const httplib::Request& req, httplib::Response& res);
 };

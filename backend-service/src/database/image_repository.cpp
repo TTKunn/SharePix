@@ -454,18 +454,145 @@ std::vector<Image> ImageRepository::findByPostId(int postId) {
             return images;
         }
 
+        // 准备结果绑定（13个字段：id, image_id, post_id, display_order, user_id, file_url, thumbnail_url, file_size, width, height, mime_type, create_time, update_time）
+        MYSQL_BIND result[13];
+        memset(result, 0, sizeof(result));
+
+        // 定义变量存储结果
+        long long id;
+        char imageId[37] = {0};
+        int postId_result;
+        int displayOrder;
+        long long userId;
+        char fileUrl[501] = {0};
+        char thumbnailUrl[501] = {0};
+        long long fileSize;
+        int width, height;
+        char mimeType[51] = {0};
+        MYSQL_TIME createTime, updateTime;
+
+        unsigned long imageId_length, fileUrl_length, thumbnailUrl_length, mimeType_length;
+
+        // 绑定结果（按照 SELECT * 的顺序）
+        int idx = 0;
+
+        // id
+        result[idx].buffer_type = MYSQL_TYPE_LONGLONG;
+        result[idx].buffer = &id;
+        idx++;
+
+        // image_id
+        result[idx].buffer_type = MYSQL_TYPE_STRING;
+        result[idx].buffer = imageId;
+        result[idx].buffer_length = sizeof(imageId);
+        result[idx].length = &imageId_length;
+        idx++;
+
+        // post_id
+        result[idx].buffer_type = MYSQL_TYPE_LONG;
+        result[idx].buffer = &postId_result;
+        idx++;
+
+        // display_order
+        result[idx].buffer_type = MYSQL_TYPE_LONG;
+        result[idx].buffer = &displayOrder;
+        idx++;
+
+        // user_id
+        result[idx].buffer_type = MYSQL_TYPE_LONGLONG;
+        result[idx].buffer = &userId;
+        idx++;
+
+        // file_url
+        result[idx].buffer_type = MYSQL_TYPE_STRING;
+        result[idx].buffer = fileUrl;
+        result[idx].buffer_length = sizeof(fileUrl);
+        result[idx].length = &fileUrl_length;
+        idx++;
+
+        // thumbnail_url
+        result[idx].buffer_type = MYSQL_TYPE_STRING;
+        result[idx].buffer = thumbnailUrl;
+        result[idx].buffer_length = sizeof(thumbnailUrl);
+        result[idx].length = &thumbnailUrl_length;
+        idx++;
+
+        // file_size
+        result[idx].buffer_type = MYSQL_TYPE_LONGLONG;
+        result[idx].buffer = &fileSize;
+        idx++;
+
+        // width
+        result[idx].buffer_type = MYSQL_TYPE_LONG;
+        result[idx].buffer = &width;
+        idx++;
+
+        // height
+        result[idx].buffer_type = MYSQL_TYPE_LONG;
+        result[idx].buffer = &height;
+        idx++;
+
+        // mime_type
+        result[idx].buffer_type = MYSQL_TYPE_STRING;
+        result[idx].buffer = mimeType;
+        result[idx].buffer_length = sizeof(mimeType);
+        result[idx].length = &mimeType_length;
+        idx++;
+
+        // create_time
+        result[idx].buffer_type = MYSQL_TYPE_TIMESTAMP;
+        result[idx].buffer = &createTime;
+        idx++;
+
+        // update_time
+        result[idx].buffer_type = MYSQL_TYPE_TIMESTAMP;
+        result[idx].buffer = &updateTime;
+        idx++;
+
+        // 绑定结果
+        if (mysql_stmt_bind_result(stmt.get(), result) != 0) {
+            Logger::error("Failed to bind result: " + std::string(mysql_stmt_error(stmt.get())));
+            return images;
+        }
+
+        // 稳定结果集
+        mysql_stmt_store_result(stmt.get());
+
         // 获取所有结果
-        while (true) {
-            Image image = buildImageFromStatement(stmt.get());
-            if (image.getId() > 0) {
-                images.push_back(image);
-                // 移动到下一行
-                if (mysql_stmt_fetch(stmt.get()) != 0) {
-                    break;
-                }
-            } else {
-                break;
-            }
+        while (mysql_stmt_fetch(stmt.get()) == 0) {
+            Image image;
+            image.setId(static_cast<int>(id));
+            image.setImageId(std::string(imageId, imageId_length));
+            image.setPostId(postId_result);
+            image.setDisplayOrder(displayOrder);
+            image.setUserId(static_cast<int>(userId));
+            image.setFileUrl(std::string(fileUrl, fileUrl_length));
+            image.setThumbnailUrl(std::string(thumbnailUrl, thumbnailUrl_length));
+            image.setFileSize(fileSize);
+            image.setWidth(width);
+            image.setHeight(height);
+            image.setMimeType(std::string(mimeType, mimeType_length));
+
+            // 转换时间
+            struct tm tm_create = {0};
+            tm_create.tm_year = createTime.year - 1900;
+            tm_create.tm_mon = createTime.month - 1;
+            tm_create.tm_mday = createTime.day;
+            tm_create.tm_hour = createTime.hour;
+            tm_create.tm_min = createTime.minute;
+            tm_create.tm_sec = createTime.second;
+            image.setCreateTime(mktime(&tm_create));
+
+            struct tm tm_update = {0};
+            tm_update.tm_year = updateTime.year - 1900;
+            tm_update.tm_mon = updateTime.month - 1;
+            tm_update.tm_mday = updateTime.day;
+            tm_update.tm_hour = updateTime.hour;
+            tm_update.tm_min = updateTime.minute;
+            tm_update.tm_sec = updateTime.second;
+            image.setUpdateTime(mktime(&tm_update));
+
+            images.push_back(image);
         }
 
     } catch (const std::exception& e) {
@@ -534,18 +661,145 @@ std::vector<Image> ImageRepository::findByPostIds(const std::vector<int>& postId
             return images;
         }
 
+        // 准备结果绑定（13个字段：id, image_id, post_id, display_order, user_id, file_url, thumbnail_url, file_size, width, height, mime_type, create_time, update_time）
+        MYSQL_BIND result[13];
+        memset(result, 0, sizeof(result));
+
+        // 定义变量存储结果
+        long long id;
+        char imageId[37] = {0};
+        int postId_result;
+        int displayOrder;
+        long long userId;
+        char fileUrl[501] = {0};
+        char thumbnailUrl[501] = {0};
+        long long fileSize;
+        int width, height;
+        char mimeType[51] = {0};
+        MYSQL_TIME createTime, updateTime;
+
+        unsigned long imageId_length, fileUrl_length, thumbnailUrl_length, mimeType_length;
+
+        // 绑定结果（按照 SELECT * 的顺序）
+        int idx = 0;
+
+        // id
+        result[idx].buffer_type = MYSQL_TYPE_LONGLONG;
+        result[idx].buffer = &id;
+        idx++;
+
+        // image_id
+        result[idx].buffer_type = MYSQL_TYPE_STRING;
+        result[idx].buffer = imageId;
+        result[idx].buffer_length = sizeof(imageId);
+        result[idx].length = &imageId_length;
+        idx++;
+
+        // post_id
+        result[idx].buffer_type = MYSQL_TYPE_LONG;
+        result[idx].buffer = &postId_result;
+        idx++;
+
+        // display_order
+        result[idx].buffer_type = MYSQL_TYPE_LONG;
+        result[idx].buffer = &displayOrder;
+        idx++;
+
+        // user_id
+        result[idx].buffer_type = MYSQL_TYPE_LONGLONG;
+        result[idx].buffer = &userId;
+        idx++;
+
+        // file_url
+        result[idx].buffer_type = MYSQL_TYPE_STRING;
+        result[idx].buffer = fileUrl;
+        result[idx].buffer_length = sizeof(fileUrl);
+        result[idx].length = &fileUrl_length;
+        idx++;
+
+        // thumbnail_url
+        result[idx].buffer_type = MYSQL_TYPE_STRING;
+        result[idx].buffer = thumbnailUrl;
+        result[idx].buffer_length = sizeof(thumbnailUrl);
+        result[idx].length = &thumbnailUrl_length;
+        idx++;
+
+        // file_size
+        result[idx].buffer_type = MYSQL_TYPE_LONGLONG;
+        result[idx].buffer = &fileSize;
+        idx++;
+
+        // width
+        result[idx].buffer_type = MYSQL_TYPE_LONG;
+        result[idx].buffer = &width;
+        idx++;
+
+        // height
+        result[idx].buffer_type = MYSQL_TYPE_LONG;
+        result[idx].buffer = &height;
+        idx++;
+
+        // mime_type
+        result[idx].buffer_type = MYSQL_TYPE_STRING;
+        result[idx].buffer = mimeType;
+        result[idx].buffer_length = sizeof(mimeType);
+        result[idx].length = &mimeType_length;
+        idx++;
+
+        // create_time
+        result[idx].buffer_type = MYSQL_TYPE_TIMESTAMP;
+        result[idx].buffer = &createTime;
+        idx++;
+
+        // update_time
+        result[idx].buffer_type = MYSQL_TYPE_TIMESTAMP;
+        result[idx].buffer = &updateTime;
+        idx++;
+
+        // 绑定结果
+        if (mysql_stmt_bind_result(stmt.get(), result) != 0) {
+            Logger::error("Failed to bind result: " + std::string(mysql_stmt_error(stmt.get())));
+            return images;
+        }
+
+        // 稳定结果集
+        mysql_stmt_store_result(stmt.get());
+
         // 获取所有结果
-        while (true) {
-            Image image = buildImageFromStatement(stmt.get());
-            if (image.getId() > 0) {
-                images.push_back(image);
-                // 移动到下一行
-                if (mysql_stmt_fetch(stmt.get()) != 0) {
-                    break;
-                }
-            } else {
-                break;
-            }
+        while (mysql_stmt_fetch(stmt.get()) == 0) {
+            Image image;
+            image.setId(static_cast<int>(id));
+            image.setImageId(std::string(imageId, imageId_length));
+            image.setPostId(postId_result);
+            image.setDisplayOrder(displayOrder);
+            image.setUserId(static_cast<int>(userId));
+            image.setFileUrl(std::string(fileUrl, fileUrl_length));
+            image.setThumbnailUrl(std::string(thumbnailUrl, thumbnailUrl_length));
+            image.setFileSize(fileSize);
+            image.setWidth(width);
+            image.setHeight(height);
+            image.setMimeType(std::string(mimeType, mimeType_length));
+
+            // 转换时间
+            struct tm tm_create = {0};
+            tm_create.tm_year = createTime.year - 1900;
+            tm_create.tm_mon = createTime.month - 1;
+            tm_create.tm_mday = createTime.day;
+            tm_create.tm_hour = createTime.hour;
+            tm_create.tm_min = createTime.minute;
+            tm_create.tm_sec = createTime.second;
+            image.setCreateTime(mktime(&tm_create));
+
+            struct tm tm_update = {0};
+            tm_update.tm_year = updateTime.year - 1900;
+            tm_update.tm_mon = updateTime.month - 1;
+            tm_update.tm_mday = updateTime.day;
+            tm_update.tm_hour = updateTime.hour;
+            tm_update.tm_min = updateTime.minute;
+            tm_update.tm_sec = updateTime.second;
+            image.setUpdateTime(mktime(&tm_update));
+
+            images.push_back(image);
         }
 
     } catch (const std::exception& e) {

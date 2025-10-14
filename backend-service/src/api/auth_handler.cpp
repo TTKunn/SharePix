@@ -50,8 +50,8 @@ void AuthHandler::registerRoutes(httplib::Server& server) {
         handleLogout(req, res);
     });
     
-    // 修改密码
-    server.Post("/api/v1/auth/change-password", [this](const httplib::Request& req, httplib::Response& res) {
+    // 修改密码（API文档路径：PUT /api/v1/auth/password）
+    server.Put("/api/v1/auth/password", [this](const httplib::Request& req, httplib::Response& res) {
         handleChangePassword(req, res);
     });
 
@@ -70,12 +70,17 @@ void AuthHandler::registerRoutes(httplib::Server& server) {
         handleCheckUsername(req, res);
     });
 
+    Logger::info("Auth routes registered");
+}
+
+// 注册通配符路由（必须最后注册）
+void AuthHandler::registerWildcardRoutes(httplib::Server& server) {
     // 获取用户公开信息 (使用正则表达式，必须放在最后)
     server.Get(R"(/api/v1/users/([^/]+))", [this](const httplib::Request& req, httplib::Response& res) {
         handleGetUserPublicInfo(req, res);
     });
 
-    Logger::info("Auth routes registered");
+    Logger::info("Auth wildcard routes registered");
 }
 
 // 处理用户注册
@@ -166,28 +171,16 @@ void AuthHandler::handleValidate(const httplib::Request& req, httplib::Response&
     if (result.valid) {
         // 构建响应数据
         Json::Value responseData;
+        responseData["valid"] = true;  // 保留valid字段以兼容旧API
         responseData["user_id"] = result.userId;
         responseData["username"] = result.username;
         
-        Json::Value response;
-        response["valid"] = true;
-        response["message"] = result.message;
-        response["data"] = responseData;
-        
-        Json::StreamWriterBuilder writer;
-        std::string jsonStr = Json::writeString(writer, response);
-        res.set_content(jsonStr, "application/json");
-        res.status = 200;
+        sendJsonResponse(res, 200, true, result.message, responseData);
     } else {
-        Json::Value response;
-        response["valid"] = false;
-        response["message"] = result.message;
-        response["data"] = Json::Value::null;
+        Json::Value responseData;
+        responseData["valid"] = false;  // 保留valid字段以兼容旧API
         
-        Json::StreamWriterBuilder writer;
-        std::string jsonStr = Json::writeString(writer, response);
-        res.set_content(jsonStr, "application/json");
-        res.status = 401;
+        sendJsonResponse(res, 401, false, result.message, responseData);
     }
 }
 
@@ -248,25 +241,47 @@ void AuthHandler::handleLogout(const httplib::Request& req, httplib::Response& r
 void AuthHandler::handleChangePassword(const httplib::Request& req, httplib::Response& res) {
     Logger::info("Handling change password request");
     
-    // 解析JSON请求体
+    // 1. 提取并验证JWT令牌
+    std::string authHeader = req.get_header_value("Authorization");
+    if (authHeader.empty() || authHeader.substr(0, 7) != "Bearer ") {
+        sendJsonResponse(res, 401, false, "未提供认证令牌");
+        return;
+    }
+
+    std::string token = authHeader.substr(7);
+
+    // 2. 验证令牌
+    TokenValidationResult validation = authService_->validateToken(token);
+    if (!validation.valid) {
+        sendJsonResponse(res, 401, false, validation.message);
+        return;
+    }
+    
+    // 3. 解析JSON请求体
     Json::Value requestJson;
     if (!parseJsonBody(req.body, requestJson)) {
         sendJsonResponse(res, 400, false, "无效的JSON格式");
         return;
     }
     
-    // 提取参数
-    int userId = requestJson.get("user_id", 0).asInt();
+    // 4. 提取参数（从JWT令牌获取userId，从body获取密码）
     std::string oldPassword = requestJson.get("old_password", "").asString();
     std::string newPassword = requestJson.get("new_password", "").asString();
     
-    // 调用认证服务
-    bool result = authService_->changePassword(userId, oldPassword, newPassword);
+    // 5. 验证参数
+    if (oldPassword.empty() || newPassword.empty()) {
+        sendJsonResponse(res, 400, false, "缺少必要参数");
+        return;
+    }
+    
+    // 6. 调用认证服务
+    bool result = authService_->changePassword(validation.userId, oldPassword, newPassword);
     
     if (result) {
         sendJsonResponse(res, 200, true, "密码修改成功");
+        Logger::info("密码修改成功: userId=" + std::to_string(validation.userId));
     } else {
-        sendJsonResponse(res, 400, false, "密码修改失败");
+        sendJsonResponse(res, 400, false, "密码修改失败，请检查旧密码是否正确");
     }
 }
 

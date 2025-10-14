@@ -28,6 +28,16 @@ void FavoriteHandler::registerRoutes(httplib::Server& server) {
         handleUnfavorite(req, res);
     });
 
+    // 查询收藏状态
+    server.Get("/api/v1/posts/:post_id/favorite/status", [this](const httplib::Request& req, httplib::Response& res) {
+        handleGetFavoriteStatus(req, res);
+    });
+
+    // 获取用户收藏列表
+    server.Get("/api/v1/my/favorites", [this](const httplib::Request& req, httplib::Response& res) {
+        handleGetUserFavorites(req, res);
+    });
+
     Logger::info("FavoriteHandler routes registered");
 }
 
@@ -105,6 +115,96 @@ void FavoriteHandler::handleUnfavorite(const httplib::Request& req, httplib::Res
 
     } catch (const std::exception& e) {
         Logger::error("Exception in handleUnfavorite: " + std::string(e.what()));
+        sendJsonResponse(res, 500, false, "服务器内部错误");
+    }
+}
+
+// 处理查询收藏状态请求
+void FavoriteHandler::handleGetFavoriteStatus(const httplib::Request& req, httplib::Response& res) {
+    try {
+        // 1. 验证JWT令牌并获取用户ID
+        int userId = 0;
+        if (!authenticateRequest(req, userId)) {
+            sendJsonResponse(res, 401, false, "未提供认证令牌或令牌无效");
+            return;
+        }
+
+        // 2. 获取路径参数post_id
+        std::string postId;
+        if (req.path_params.count("post_id") > 0) {
+            postId = req.path_params.at("post_id");
+        } else {
+            sendJsonResponse(res, 400, false, "缺少帖子ID");
+            return;
+        }
+
+        // 3. 调用Service层查询收藏状态
+        FavoriteStatusResult result = favoriteService_->getFavoriteStatus(userId, postId);
+
+        // 4. 构建响应数据
+        Json::Value data;
+        data["post_id"] = postId;
+        data["has_favorited"] = result.hasFavorited;
+        data["favorite_count"] = result.favoriteCount;
+
+        // 5. 发送响应
+        sendJsonResponse(res, result.statusCode, result.success, result.message, data);
+
+    } catch (const std::exception& e) {
+        Logger::error("Exception in handleGetFavoriteStatus: " + std::string(e.what()));
+        sendJsonResponse(res, 500, false, "服务器内部错误");
+    }
+}
+
+// 处理获取用户收藏列表请求
+void FavoriteHandler::handleGetUserFavorites(const httplib::Request& req, httplib::Response& res) {
+    try {
+        // 1. 验证JWT令牌并获取用户ID
+        int userId = 0;
+        if (!authenticateRequest(req, userId)) {
+            sendJsonResponse(res, 401, false, "未提供认证令牌或令牌无效");
+            return;
+        }
+
+        // 2. 获取分页参数
+        int page = 1;
+        int pageSize = 20;
+        
+        if (req.has_param("page")) {
+            page = std::stoi(req.get_param_value("page"));
+        }
+        if (req.has_param("page_size")) {
+            pageSize = std::stoi(req.get_param_value("page_size"));
+        }
+
+        // 验证分页参数
+        if (page < 1) page = 1;
+        if (pageSize < 1 || pageSize > 100) pageSize = 20;
+
+        Logger::info("Getting favorites for user " + std::to_string(userId) + 
+                     ", page=" + std::to_string(page) + ", pageSize=" + std::to_string(pageSize));
+
+        // 3. 调用Service层获取收藏列表
+        FavoriteListResult result = favoriteService_->getUserFavorites(userId, page, pageSize);
+
+        // 4. 构建响应数据
+        Json::Value data;
+        data["posts"] = Json::Value(Json::arrayValue);
+        
+        for (const auto& post : result.posts) {
+            data["posts"].append(post.toJson());
+        }
+        
+        data["total"] = result.total;
+        data["page"] = page;
+        data["page_size"] = pageSize;
+        data["total_pages"] = (result.total + pageSize - 1) / pageSize;
+
+        // 5. 发送响应
+        sendJsonResponse(res, result.statusCode, result.success, result.message, data);
+
+    } catch (const std::exception& e) {
+        Logger::error("Exception in handleGetUserFavorites: " + std::string(e.what()));
         sendJsonResponse(res, 500, false, "服务器内部错误");
     }
 }

@@ -482,18 +482,142 @@ std::vector<Post> PostRepository::getRecentPosts(int page, int pageSize) {
             return posts;
         }
 
+        // 准备结果绑定（12个字段：id, post_id, user_id, title, description, image_count, like_count, favorite_count, view_count, status, create_time, update_time）
+        MYSQL_BIND result[12];
+        memset(result, 0, sizeof(result));
+
+        // 定义变量存储结果
+        long long id;
+        char postId[37] = {0};
+        long long userId_result;
+        char title[256] = {0};
+        char description[1024] = {0};
+        int imageCount, likeCount, favoriteCount, viewCount;
+        char status[20] = {0};
+        MYSQL_TIME createTime, updateTime;
+
+        unsigned long postId_length, title_length, description_length, status_length;
+        bool description_is_null;
+
+        // 绑定结果（按照 SELECT * 的顺序）
+        int idx = 0;
+
+        // id
+        result[idx].buffer_type = MYSQL_TYPE_LONGLONG;
+        result[idx].buffer = &id;
+        idx++;
+
+        // post_id
+        result[idx].buffer_type = MYSQL_TYPE_STRING;
+        result[idx].buffer = postId;
+        result[idx].buffer_length = sizeof(postId);
+        result[idx].length = &postId_length;
+        idx++;
+
+        // user_id
+        result[idx].buffer_type = MYSQL_TYPE_LONGLONG;
+        result[idx].buffer = &userId_result;
+        idx++;
+
+        // title
+        result[idx].buffer_type = MYSQL_TYPE_STRING;
+        result[idx].buffer = title;
+        result[idx].buffer_length = sizeof(title);
+        result[idx].length = &title_length;
+        idx++;
+
+        // description
+        result[idx].buffer_type = MYSQL_TYPE_STRING;
+        result[idx].buffer = description;
+        result[idx].buffer_length = sizeof(description);
+        result[idx].length = &description_length;
+        result[idx].is_null = &description_is_null;
+        idx++;
+
+        // image_count
+        result[idx].buffer_type = MYSQL_TYPE_LONG;
+        result[idx].buffer = &imageCount;
+        idx++;
+
+        // like_count
+        result[idx].buffer_type = MYSQL_TYPE_LONG;
+        result[idx].buffer = &likeCount;
+        idx++;
+
+        // favorite_count
+        result[idx].buffer_type = MYSQL_TYPE_LONG;
+        result[idx].buffer = &favoriteCount;
+        idx++;
+
+        // view_count
+        result[idx].buffer_type = MYSQL_TYPE_LONG;
+        result[idx].buffer = &viewCount;
+        idx++;
+
+        // status
+        result[idx].buffer_type = MYSQL_TYPE_STRING;
+        result[idx].buffer = status;
+        result[idx].buffer_length = sizeof(status);
+        result[idx].length = &status_length;
+        idx++;
+
+        // create_time
+        result[idx].buffer_type = MYSQL_TYPE_TIMESTAMP;
+        result[idx].buffer = &createTime;
+        idx++;
+
+        // update_time
+        result[idx].buffer_type = MYSQL_TYPE_TIMESTAMP;
+        result[idx].buffer = &updateTime;
+        idx++;
+
+        // 绑定结果
+        if (mysql_stmt_bind_result(stmt.get(), result) != 0) {
+            Logger::error("Failed to bind result: " + std::string(mysql_stmt_error(stmt.get())));
+            return posts;
+        }
+
+        // 稳定结果集
+        mysql_stmt_store_result(stmt.get());
+
         // 获取所有结果
-        while (true) {
-            Post post = buildPostFromStatement(stmt.get());
-            if (post.getId() > 0) {
-                posts.push_back(post);
-                // 移动到下一行
-                if (mysql_stmt_fetch(stmt.get()) != 0) {
-                    break;
-                }
-            } else {
-                break;
+        while (mysql_stmt_fetch(stmt.get()) == 0) {
+            Post post;
+            post.setId(static_cast<int>(id));
+            post.setPostId(std::string(postId, postId_length));
+            post.setUserId(static_cast<int>(userId_result));
+            post.setTitle(std::string(title, title_length));
+
+            if (!description_is_null) {
+                post.setDescription(std::string(description, description_length));
             }
+
+            post.setImageCount(imageCount);
+            post.setLikeCount(likeCount);
+            post.setFavoriteCount(favoriteCount);
+            post.setViewCount(viewCount);
+            post.setStatus(Post::stringToStatus(std::string(status, status_length)));
+
+            // 转换时间
+            struct tm tm_create = {0};
+            tm_create.tm_year = createTime.year - 1900;
+            tm_create.tm_mon = createTime.month - 1;
+            tm_create.tm_mday = createTime.day;
+            tm_create.tm_hour = createTime.hour;
+            tm_create.tm_min = createTime.minute;
+            tm_create.tm_sec = createTime.second;
+            post.setCreateTime(mktime(&tm_create));
+
+            struct tm tm_update = {0};
+            tm_update.tm_year = updateTime.year - 1900;
+            tm_update.tm_mon = updateTime.month - 1;
+            tm_update.tm_mday = updateTime.day;
+            tm_update.tm_hour = updateTime.hour;
+            tm_update.tm_min = updateTime.minute;
+            tm_update.tm_sec = updateTime.second;
+            post.setUpdateTime(mktime(&tm_update));
+
+            posts.push_back(post);
         }
 
     } catch (const std::exception& e) {
@@ -600,18 +724,142 @@ std::vector<Post> PostRepository::findByUserId(int userId, int page, int pageSiz
             return posts;
         }
 
+        // 准备结果绑定（12个字段：id, post_id, user_id, title, description, image_count, like_count, favorite_count, view_count, status, create_time, update_time）
+        MYSQL_BIND result[12];
+        memset(result, 0, sizeof(result));
+
+        // 定义变量存储结果
+        long long id;
+        char postId[37] = {0};
+        long long userId_result;
+        char title[256] = {0};
+        char description[1024] = {0};
+        int imageCount, likeCount, favoriteCount, viewCount;
+        char status[20] = {0};
+        MYSQL_TIME createTime, updateTime;
+
+        unsigned long postId_length, title_length, description_length, status_length;
+        bool description_is_null;
+
+        // 绑定结果（按照 SELECT * 的顺序）
+        int idx = 0;
+
+        // id
+        result[idx].buffer_type = MYSQL_TYPE_LONGLONG;
+        result[idx].buffer = &id;
+        idx++;
+
+        // post_id
+        result[idx].buffer_type = MYSQL_TYPE_STRING;
+        result[idx].buffer = postId;
+        result[idx].buffer_length = sizeof(postId);
+        result[idx].length = &postId_length;
+        idx++;
+
+        // user_id
+        result[idx].buffer_type = MYSQL_TYPE_LONGLONG;
+        result[idx].buffer = &userId_result;
+        idx++;
+
+        // title
+        result[idx].buffer_type = MYSQL_TYPE_STRING;
+        result[idx].buffer = title;
+        result[idx].buffer_length = sizeof(title);
+        result[idx].length = &title_length;
+        idx++;
+
+        // description
+        result[idx].buffer_type = MYSQL_TYPE_STRING;
+        result[idx].buffer = description;
+        result[idx].buffer_length = sizeof(description);
+        result[idx].length = &description_length;
+        result[idx].is_null = &description_is_null;
+        idx++;
+
+        // image_count
+        result[idx].buffer_type = MYSQL_TYPE_LONG;
+        result[idx].buffer = &imageCount;
+        idx++;
+
+        // like_count
+        result[idx].buffer_type = MYSQL_TYPE_LONG;
+        result[idx].buffer = &likeCount;
+        idx++;
+
+        // favorite_count
+        result[idx].buffer_type = MYSQL_TYPE_LONG;
+        result[idx].buffer = &favoriteCount;
+        idx++;
+
+        // view_count
+        result[idx].buffer_type = MYSQL_TYPE_LONG;
+        result[idx].buffer = &viewCount;
+        idx++;
+
+        // status
+        result[idx].buffer_type = MYSQL_TYPE_STRING;
+        result[idx].buffer = status;
+        result[idx].buffer_length = sizeof(status);
+        result[idx].length = &status_length;
+        idx++;
+
+        // create_time
+        result[idx].buffer_type = MYSQL_TYPE_TIMESTAMP;
+        result[idx].buffer = &createTime;
+        idx++;
+
+        // update_time
+        result[idx].buffer_type = MYSQL_TYPE_TIMESTAMP;
+        result[idx].buffer = &updateTime;
+        idx++;
+
+        // 绑定结果
+        if (mysql_stmt_bind_result(stmt.get(), result) != 0) {
+            Logger::error("Failed to bind result: " + std::string(mysql_stmt_error(stmt.get())));
+            return posts;
+        }
+
+        // 稳定结果集
+        mysql_stmt_store_result(stmt.get());
+
         // 获取所有结果
-        while (true) {
-            Post post = buildPostFromStatement(stmt.get());
-            if (post.getId() > 0) {
-                posts.push_back(post);
-                // 移动到下一行
-                if (mysql_stmt_fetch(stmt.get()) != 0) {
-                    break;
-                }
-            } else {
-                break;
+        while (mysql_stmt_fetch(stmt.get()) == 0) {
+            Post post;
+            post.setId(static_cast<int>(id));
+            post.setPostId(std::string(postId, postId_length));
+            post.setUserId(static_cast<int>(userId_result));
+            post.setTitle(std::string(title, title_length));
+
+            if (!description_is_null) {
+                post.setDescription(std::string(description, description_length));
             }
+
+            post.setImageCount(imageCount);
+            post.setLikeCount(likeCount);
+            post.setFavoriteCount(favoriteCount);
+            post.setViewCount(viewCount);
+            post.setStatus(Post::stringToStatus(std::string(status, status_length)));
+
+            // 转换时间
+            struct tm tm_create = {0};
+            tm_create.tm_year = createTime.year - 1900;
+            tm_create.tm_mon = createTime.month - 1;
+            tm_create.tm_mday = createTime.day;
+            tm_create.tm_hour = createTime.hour;
+            tm_create.tm_min = createTime.minute;
+            tm_create.tm_sec = createTime.second;
+            post.setCreateTime(mktime(&tm_create));
+
+            struct tm tm_update = {0};
+            tm_update.tm_year = updateTime.year - 1900;
+            tm_update.tm_mon = updateTime.month - 1;
+            tm_update.tm_mday = updateTime.day;
+            tm_update.tm_hour = updateTime.hour;
+            tm_update.tm_min = updateTime.minute;
+            tm_update.tm_sec = updateTime.second;
+            post.setUpdateTime(mktime(&tm_update));
+
+            posts.push_back(post);
         }
 
     } catch (const std::exception& e) {

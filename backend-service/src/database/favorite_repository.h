@@ -8,6 +8,7 @@
 #pragma once
 
 #include "models/favorite.h"
+#include "models/post.h"
 #include <mysql/mysql.h>
 #include <optional>
 #include <vector>
@@ -73,6 +74,24 @@ public:
      * @return 收藏列表
      */
     std::vector<Favorite> findByUserId(MYSQL* conn, int userId, int limit = 20, int offset = 0);
+
+    /**
+     * @brief 获取用户收藏的帖子列表（带分页）
+     * @param conn MySQL连接
+     * @param userId 用户ID
+     * @param page 页码（从1开始）
+     * @param pageSize 每页数量
+     * @return Post列表
+     */
+    std::vector<Post> getUserFavorites(MYSQL* conn, int userId, int page, int pageSize);
+
+    /**
+     * @brief 获取用户收藏的帖子总数
+     * @param conn MySQL连接
+     * @param userId 用户ID
+     * @return 收藏总数
+     */
+    int getUserFavoriteCount(MYSQL* conn, int userId);
 
 private:
     /**
