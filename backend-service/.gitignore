@@ -154,9 +154,10 @@ vgcore.*
 *.perf
 perf.data*
 
-# Core dumps
-core
-core.*
+# Core dumps (只忽略根目录和任意深度的core dump文件，不忽略src/core目录)
+/core
+**/core.[0-9]*
+vgcore.*
 
 # ============================================
 # 文档生成
