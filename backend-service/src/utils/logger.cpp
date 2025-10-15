@@ -97,7 +97,12 @@ bool Logger::initialize(const std::string& logFile,
         
         // Register as default logger
         spdlog::set_default_logger(logger);
+        
+        // INFO级别及以上的日志会在遇到ERROR时立即刷新
         spdlog::flush_on(spdlog::level::err);
+        
+        // 设置定时刷新：每5秒自动刷新一次所有缓存的日志
+        spdlog::flush_every(std::chrono::seconds(5));
         
         currentLevel_ = level;
         consoleOutput_ = consoleOutput;

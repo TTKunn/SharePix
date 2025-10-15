@@ -576,8 +576,8 @@ bool UserRepository::phoneExists(const std::string& phone) {
 bool UserRepository::updateUserProfile(int userId,
                                       const std::string& realName,
                                       const std::string& email,
-                                      const std::string& avatarUrl,
                                       const std::string& phone,
+                                      const std::string& avatarUrl,
                                       const std::string& bio,
                                       const std::string& gender,
                                       const std::string& location) {
@@ -598,7 +598,7 @@ bool UserRepository::updateUserProfile(int userId,
         // 准备SQL语句 - 只更新允许修改的字段
         const char* query =
             "UPDATE users SET "
-            "real_name = ?, email = ?, avatar_url = ?, phone = ?, "
+            "real_name = ?, email = ?, phone = ?, avatar_url = ?, "
             "bio = ?, gender = ?, location = ?, "
             "update_time = CURRENT_TIMESTAMP "
             "WHERE id = ?";
@@ -630,16 +630,16 @@ bool UserRepository::updateUserProfile(int userId,
         bind[1].buffer_length = email.length();
         bind[1].is_null = &email_is_null;
 
-        // avatar_url (可为空)
-        bind[2].buffer_type = MYSQL_TYPE_STRING;
-        bind[2].buffer = (char*)avatarUrl.c_str();
-        bind[2].buffer_length = avatarUrl.length();
-        bind[2].is_null = &avatar_is_null;
-
         // phone
+        bind[2].buffer_type = MYSQL_TYPE_STRING;
+        bind[2].buffer = (char*)phone.c_str();
+        bind[2].buffer_length = phone.length();
+
+        // avatar_url (可为空)
         bind[3].buffer_type = MYSQL_TYPE_STRING;
-        bind[3].buffer = (char*)phone.c_str();
-        bind[3].buffer_length = phone.length();
+        bind[3].buffer = (char*)avatarUrl.c_str();
+        bind[3].buffer_length = avatarUrl.length();
+        bind[3].is_null = &avatar_is_null;
 
         // bio (可为空)
         bind[4].buffer_type = MYSQL_TYPE_STRING;

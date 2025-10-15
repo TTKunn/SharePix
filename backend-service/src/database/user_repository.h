@@ -130,8 +130,8 @@ public:
     bool updateUserProfile(int userId,
                           const std::string& realName,
                           const std::string& email,
-                          const std::string& avatarUrl,
                           const std::string& phone,
+                          const std::string& avatarUrl,
                           const std::string& bio,
                           const std::string& gender,
                           const std::string& location);

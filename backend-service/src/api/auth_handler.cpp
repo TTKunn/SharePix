@@ -401,7 +401,7 @@ void AuthHandler::handleUpdateProfile(const httplib::Request& req, httplib::Resp
 
     // 5. 调用Service层更新
     UpdateProfileResult result = authService_->updateUserProfile(
-        validation.userId, realName, email, avatarUrl, phone, bio, gender, location
+        validation.userId, realName, email, phone, avatarUrl, bio, gender, location
     );
 
     if (!result.success) {

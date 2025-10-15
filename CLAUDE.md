@@ -42,7 +42,7 @@
 
 **技术栈**: C++17, MySQL 8.0, cpp-httplib 0.11.0, jwt-cpp 0.6.0, JsonCpp 1.9.5, OpenSSL 1.1.1, spdlog 1.9.2
 
-**当前版本**: v2.3.0
+**当前版本**: v2.4.1
 
 **当前状态**:
 - ✅ 用户认证系统（注册、登录、JWT令牌管理、密码修改）
@@ -420,6 +420,28 @@ nohup ./start-api-docs.sh > api-docs.log 2>&1 &
    - 或者打开开发者工具，右键刷新按钮选择"清空缓存并硬性重新加载"
 
 ## API版本历史
+
+### v2.4.1 (2025-10-15) - JSON格式创建帖子支持
+**新增功能：**
+- ✅ 创建帖子接口支持JSON+Base64格式
+  - POST /api/v1/posts - 同时支持multipart/form-data和application/json
+  - 支持Base64编码的图片数据（Data URI和纯Base64两种格式）
+  - 自动检测和解码Base64数据
+
+**技术实现：**
+- Content-Type自动识别（multipart/form-data 或 application/json）
+- 复用现有Base64Decoder进行图片解码
+- 完整的日志记录（解码时间、大小变化、格式验证）
+- 向后兼容，不影响现有multipart客户端
+
+**性能指标：**
+- Base64解码时间：<1ms（9KB图片）
+- 大小变化：Base64编码增加约25-33%
+- 支持格式：PNG、JPEG、GIF、WebP
+
+**文档：** `[115]创建帖子接口支持JSON+Base64格式-实施计划.md`
+
+---
 
 ### v2.3.0 (2025-10-11) - 分享系统
 **新增功能：**

@@ -491,17 +491,18 @@ UpdateProfileResult AuthService::updateUserProfile(
             }
         }
 
-        // 6. 更新用户字段
-        if (!realName.empty()) existingUser->setRealName(realName);
-        if (!email.empty()) existingUser->setEmail(email);
-        if (!phone.empty()) existingUser->setPhone(phone);
-        if (!avatarUrl.empty()) existingUser->setAvatarUrl(avatarUrl);
-        if (!bio.empty()) existingUser->setBio(bio);
-        if (!gender.empty()) existingUser->setGender(gender);
-        if (!location.empty()) existingUser->setLocation(location);
+        // 6. 准备更新参数（如果参数为空，使用现有值）
+        std::string finalRealName = !realName.empty() ? realName : existingUser->getRealName();
+        std::string finalEmail = !email.empty() ? email : existingUser->getEmail();
+        std::string finalPhone = !phone.empty() ? phone : existingUser->getPhone();
+        std::string finalAvatarUrl = !avatarUrl.empty() ? avatarUrl : existingUser->getAvatarUrl();
+        std::string finalBio = !bio.empty() ? bio : existingUser->getBio();
+        std::string finalGender = !gender.empty() ? gender : existingUser->getGender();
+        std::string finalLocation = !location.empty() ? location : existingUser->getLocation();
 
-        // 7. 更新用户信息
-        if (!userRepo_->updateUser(*existingUser)) {
+        // 7. 调用Repository层更新用户信息
+        if (!userRepo_->updateUserProfile(userId, finalRealName, finalEmail, finalPhone, 
+                                          finalAvatarUrl, finalBio, finalGender, finalLocation)) {
             result.message = "更新用户信息失败";
             Logger::error(result.message);
             return result;
