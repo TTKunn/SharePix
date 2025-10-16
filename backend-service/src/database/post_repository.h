@@ -82,6 +82,15 @@ public:
     std::vector<Post> getRecentPostsWithImages(int page, int pageSize);
     
     /**
+     * @brief 获取最新帖子列表（包含图片，使用LEFT JOIN优化，推荐使用）
+     * @param page 页码（从1开始）
+     * @param pageSize 每页数量
+     * @return 帖子列表（包含images）
+     * @note 使用LEFT JOIN + 一次查询获取所有数据，性能更优
+     */
+    std::vector<Post> getRecentPostsWithImagesOptimized(int page, int pageSize);
+    
+    /**
      * @brief 根据用户ID查找帖子列表（不包含图片）
      * @param userId 用户ID
      * @param page 页码（从1开始）

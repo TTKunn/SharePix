@@ -8,6 +8,7 @@
 #include "core/image_service.h"
 #include "database/image_repository.h"
 #include "utils/image_processor.h"
+#include "utils/config_manager.h"
 #include "utils/logger.h"
 #include <random>
 #include <sstream>
@@ -49,11 +50,25 @@ ImageUploadResult ImageService::uploadImage(
     // 2. 生成图片ID
     std::string imageId = generateImageId();
 
-    // 3. 处理图片（压缩 + 生成缩略图）
+    // 3. 从配置获取图片存储路径（支持相对路径和绝对路径）
+    std::string imageDir = ConfigManager::getInstance()
+        .get<std::string>("upload.image_dir", "uploads/images");
+    std::string thumbnailDir = ConfigManager::getInstance()
+        .get<std::string>("upload.thumbnail_dir", "uploads/thumbnails");
+    
+    // 确保路径以斜杠结尾
+    if (!imageDir.empty() && imageDir.back() != '/') {
+        imageDir += "/";
+    }
+    if (!thumbnailDir.empty() && thumbnailDir.back() != '/') {
+        thumbnailDir += "/";
+    }
+
+    // 4. 处理图片（压缩 + 生成缩略图）
     ProcessResult processResult = ImageProcessor::processImage(
         tempPath,
-        "uploads/images/",
-        "uploads/thumbnails/",
+        imageDir,
+        thumbnailDir,
         imageId
     );
 
@@ -64,20 +79,44 @@ ImageUploadResult ImageService::uploadImage(
         return result;
     }
 
-    // 4. 创建Image对象（不保存到数据库，由调用方负责设置postId并保存）
+    // 5. 创建Image对象（不保存到数据库，由调用方负责设置postId并保存）
     Image image;
     image.setImageId(imageId);
     image.setUserId(userId);
     
-    // 确保URL以斜杠开头（标准化路径格式）
-    std::string fileUrl = processResult.originalPath;
-    std::string thumbnailUrl = processResult.thumbnailPath;
-    if (!fileUrl.empty() && fileUrl[0] != '/') {
-        fileUrl = "/" + fileUrl;
-    }
-    if (!thumbnailUrl.empty() && thumbnailUrl[0] != '/') {
-        thumbnailUrl = "/" + thumbnailUrl;
-    }
+    // 将物理路径转换为HTTP访问路径
+    // 物理路径: "../uploads/images/IMG_xxx.jpg" 或 "uploads/images/IMG_xxx.jpg"
+    // HTTP路径: "/uploads/images/IMG_xxx.jpg"
+    auto convertToHttpPath = [](const std::string& physicalPath) -> std::string {
+        // 查找 "images/" 或 "thumbnails/" 的位置
+        size_t imagesPos = physicalPath.find("images/");
+        size_t thumbnailsPos = physicalPath.find("thumbnails/");
+        
+        if (imagesPos != std::string::npos) {
+            // 提取 "images/filename.jpg" 部分，并添加 "/uploads/" 前缀
+            return "/uploads/" + physicalPath.substr(imagesPos);
+        } else if (thumbnailsPos != std::string::npos) {
+            // 提取 "thumbnails/filename.jpg" 部分，并添加 "/uploads/" 前缀
+            return "/uploads/" + physicalPath.substr(thumbnailsPos);
+        }
+        
+        // 如果没有找到，检查是否已经是标准HTTP路径（以 /uploads/ 开头）
+        if (physicalPath.find("/uploads/") == 0) {
+            return physicalPath;
+        }
+        
+        // 兜底：确保以斜杠开头
+        if (!physicalPath.empty() && physicalPath[0] != '/') {
+            return "/" + physicalPath;
+        }
+        
+        return physicalPath;
+    };
+    
+    std::string fileUrl = convertToHttpPath(processResult.originalPath);
+    std::string thumbnailUrl = convertToHttpPath(processResult.thumbnailPath);
+    
+    Logger::debug("Path conversion: " + processResult.originalPath + " -> " + fileUrl);
     
     image.setFileUrl(fileUrl);
     image.setThumbnailUrl(thumbnailUrl);

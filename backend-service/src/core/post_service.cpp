@@ -343,13 +343,14 @@ PostQueryResult PostService::getRecentPosts(int page, int pageSize, bool include
             return result;
         }
 
-        // 2. 查询帖子列表
-        std::vector<Post> posts;
-        if (includeImages) {
-            posts = postRepo_->getRecentPostsWithImages(page, pageSize);
-        } else {
-            posts = postRepo_->getRecentPosts(page, pageSize);
-        }
+               // 2. 查询帖子列表（使用优化的JOIN查询）
+               std::vector<Post> posts;
+               if (includeImages) {
+                   // 使用优化的LEFT JOIN查询，一次性获取所有数据
+                   posts = postRepo_->getRecentPostsWithImagesOptimized(page, pageSize);
+               } else {
+                   posts = postRepo_->getRecentPosts(page, pageSize);
+               }
 
         // 3. 查询总数
         int totalCount = postRepo_->getTotalCount();

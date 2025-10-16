@@ -250,18 +250,20 @@ void HttpServer::setupStaticFiles() {
     try {
         // 获取静态文件配置
         auto& config = ConfigManager::getInstance();
-        std::string staticRoot = config.get<std::string>("static.root", "./uploads");
         bool enableCache = config.get<bool>("static.enable_cache", true);
         int cacheMaxAge = config.get<int>("static.cache_max_age", 3600);
 
-        // 规范化路径，确保路径存在
-        if (staticRoot.back() != '/') {
-            staticRoot += '/';
-        }
+        // 从upload配置获取图片存储目录（支持独立配置）
+        std::string imagesDir = config.get<std::string>("upload.image_dir", "uploads/images");
+        std::string thumbnailsDir = config.get<std::string>("upload.thumbnail_dir", "uploads/thumbnails");
 
-        // 创建必要的目录
-        std::string imagesDir = staticRoot + "images";
-        std::string thumbnailsDir = staticRoot + "thumbnails";
+        // 移除末尾的斜杠（如果有）
+        if (!imagesDir.empty() && imagesDir.back() == '/') {
+            imagesDir.pop_back();
+        }
+        if (!thumbnailsDir.empty() && thumbnailsDir.back() == '/') {
+            thumbnailsDir.pop_back();
+        }
 
         // 创建目录（如果不存在）
         int result1 = system(("mkdir -p " + imagesDir + " 2>/dev/null").c_str());
@@ -285,7 +287,6 @@ void HttpServer::setupStaticFiles() {
         }
 
         Logger::info("Static files configured successfully:");
-        Logger::info("  - Root directory: " + staticRoot);
         Logger::info("  - Images: /uploads/images -> " + imagesDir);
         Logger::info("  - Thumbnails: /uploads/thumbnails -> " + thumbnailsDir);
         Logger::info("  - Cache enabled: " + std::string(enableCache ? "yes" : "no"));

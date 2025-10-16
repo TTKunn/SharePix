@@ -16,6 +16,7 @@
 #include <memory>
 #include <sstream>
 #include <map>
+#include <chrono>
 
 // 构造函数
 PostRepository::PostRepository() {
@@ -491,7 +492,7 @@ std::vector<Post> PostRepository::getRecentPosts(int page, int pageSize) {
         char postId[37] = {0};
         long long userId_result;
         char title[256] = {0};
-        char description[1024] = {0};
+        char description[4096] = {0};  // 增加缓冲区大小避免溢出
         int imageCount, likeCount, favoriteCount, viewCount;
         char status[20] = {0};
         MYSQL_TIME createTime, updateTime;
@@ -675,6 +676,352 @@ std::vector<Post> PostRepository::getRecentPostsWithImages(int page, int pageSiz
     return posts;
 }
 
+// 获取最新帖子列表（包含图片，使用LEFT JOIN优化，推荐使用）
+std::vector<Post> PostRepository::getRecentPostsWithImagesOptimized(int page, int pageSize) {
+    std::vector<Post> posts;
+    
+    try {
+        // 记录查询开始时间
+        auto startTime = std::chrono::high_resolution_clock::now();
+        
+        ConnectionGuard connGuard(DatabaseConnectionPool::getInstance());
+        if (!connGuard.isValid()) {
+            Logger::error("Failed to get database connection");
+            return posts;
+        }
+
+        // 使用子查询 + LEFT JOIN 确保LIMIT正确应用于帖子数量
+        const char* query = 
+            "SELECT "
+            "  p.id, p.post_id, p.user_id, p.title, p.description, "
+            "  p.image_count, p.like_count, p.favorite_count, p.view_count, "
+            "  p.status, p.create_time, p.update_time, "
+            "  i.image_id, i.file_url, i.thumbnail_url, i.display_order, "
+            "  i.width, i.height, i.mime_type, i.file_size, i.create_time as img_create_time "
+            "FROM ( "
+            "  SELECT * FROM posts "
+            "  WHERE status = 'APPROVED' "
+            "  ORDER BY create_time DESC "
+            "  LIMIT ? OFFSET ? "
+            ") p "
+            "LEFT JOIN images i ON p.id = i.post_id "
+            "ORDER BY p.create_time DESC, i.display_order ASC";
+
+        MySQLStatement stmt(connGuard.get());
+        if (!stmt.isValid()) {
+            return posts;
+        }
+
+        if (mysql_stmt_prepare(stmt.get(), query, strlen(query)) != 0) {
+            Logger::error("Failed to prepare statement: " + std::string(mysql_stmt_error(stmt.get())));
+            return posts;
+        }
+
+        // 计算OFFSET
+        int offset = (page - 1) * pageSize;
+
+        // 绑定参数
+        MYSQL_BIND bind[2];
+        memset(bind, 0, sizeof(bind));
+
+        bind[0].buffer_type = MYSQL_TYPE_LONG;
+        bind[0].buffer = &pageSize;
+
+        bind[1].buffer_type = MYSQL_TYPE_LONG;
+        bind[1].buffer = &offset;
+
+        if (mysql_stmt_bind_param(stmt.get(), bind) != 0) {
+            Logger::error("Failed to bind parameters: " + std::string(mysql_stmt_error(stmt.get())));
+            return posts;
+        }
+
+        // 执行查询
+        if (mysql_stmt_execute(stmt.get()) != 0) {
+            Logger::error("Failed to execute statement: " + std::string(mysql_stmt_error(stmt.get())));
+            return posts;
+        }
+
+        // 定义结果缓冲区
+        long long id;
+        char postId[256];
+        unsigned long postId_length;
+        long long userId_result;
+        char title[512];
+        unsigned long title_length;
+        char description[4096];  // 增加缓冲区大小
+        unsigned long description_length;
+        bool description_is_null;
+        int imageCount;
+        int likeCount;
+        int favoriteCount;
+        int viewCount;
+        char status[32];
+        unsigned long status_length;
+        MYSQL_TIME createTime;
+        MYSQL_TIME updateTime;
+        
+        // 图片字段
+        char imageId[256];
+        unsigned long imageId_length;
+        bool imageId_is_null;
+        char fileUrl[1024];
+        unsigned long fileUrl_length;
+        bool fileUrl_is_null;
+        char thumbnailUrl[1024];
+        unsigned long thumbnailUrl_length;
+        bool thumbnailUrl_is_null;
+        int displayOrder;
+        bool displayOrder_is_null;
+        int width;
+        bool width_is_null;
+        int height;
+        bool height_is_null;
+        char mimeType[128];
+        unsigned long mimeType_length;
+        bool mimeType_is_null;
+        long long fileSize;
+        bool fileSize_is_null;
+        MYSQL_TIME imgCreateTime;
+        bool imgCreateTime_is_null;
+
+        // 绑定结果
+        MYSQL_BIND result[23];
+        memset(result, 0, sizeof(result));
+        
+        int idx = 0;
+        // Post字段
+        result[idx].buffer_type = MYSQL_TYPE_LONGLONG;
+        result[idx].buffer = &id;
+        idx++;
+
+        result[idx].buffer_type = MYSQL_TYPE_STRING;
+        result[idx].buffer = postId;
+        result[idx].buffer_length = sizeof(postId);
+        result[idx].length = &postId_length;
+        idx++;
+
+        result[idx].buffer_type = MYSQL_TYPE_LONGLONG;
+        result[idx].buffer = &userId_result;
+        idx++;
+
+        result[idx].buffer_type = MYSQL_TYPE_STRING;
+        result[idx].buffer = title;
+        result[idx].buffer_length = sizeof(title);
+        result[idx].length = &title_length;
+        idx++;
+
+        result[idx].buffer_type = MYSQL_TYPE_STRING;
+        result[idx].buffer = description;
+        result[idx].buffer_length = sizeof(description);
+        result[idx].length = &description_length;
+        result[idx].is_null = &description_is_null;
+        idx++;
+
+        result[idx].buffer_type = MYSQL_TYPE_LONG;
+        result[idx].buffer = &imageCount;
+        idx++;
+
+        result[idx].buffer_type = MYSQL_TYPE_LONG;
+        result[idx].buffer = &likeCount;
+        idx++;
+
+        result[idx].buffer_type = MYSQL_TYPE_LONG;
+        result[idx].buffer = &favoriteCount;
+        idx++;
+
+        result[idx].buffer_type = MYSQL_TYPE_LONG;
+        result[idx].buffer = &viewCount;
+        idx++;
+
+        result[idx].buffer_type = MYSQL_TYPE_STRING;
+        result[idx].buffer = status;
+        result[idx].buffer_length = sizeof(status);
+        result[idx].length = &status_length;
+        idx++;
+
+        result[idx].buffer_type = MYSQL_TYPE_TIMESTAMP;
+        result[idx].buffer = &createTime;
+        idx++;
+
+        result[idx].buffer_type = MYSQL_TYPE_TIMESTAMP;
+        result[idx].buffer = &updateTime;
+        idx++;
+
+        // Image字段
+        result[idx].buffer_type = MYSQL_TYPE_STRING;
+        result[idx].buffer = imageId;
+        result[idx].buffer_length = sizeof(imageId);
+        result[idx].length = &imageId_length;
+        result[idx].is_null = &imageId_is_null;
+        idx++;
+
+        result[idx].buffer_type = MYSQL_TYPE_STRING;
+        result[idx].buffer = fileUrl;
+        result[idx].buffer_length = sizeof(fileUrl);
+        result[idx].length = &fileUrl_length;
+        result[idx].is_null = &fileUrl_is_null;
+        idx++;
+
+        result[idx].buffer_type = MYSQL_TYPE_STRING;
+        result[idx].buffer = thumbnailUrl;
+        result[idx].buffer_length = sizeof(thumbnailUrl);
+        result[idx].length = &thumbnailUrl_length;
+        result[idx].is_null = &thumbnailUrl_is_null;
+        idx++;
+
+        result[idx].buffer_type = MYSQL_TYPE_LONG;
+        result[idx].buffer = &displayOrder;
+        result[idx].is_null = &displayOrder_is_null;
+        idx++;
+
+        result[idx].buffer_type = MYSQL_TYPE_LONG;
+        result[idx].buffer = &width;
+        result[idx].is_null = &width_is_null;
+        idx++;
+
+        result[idx].buffer_type = MYSQL_TYPE_LONG;
+        result[idx].buffer = &height;
+        result[idx].is_null = &height_is_null;
+        idx++;
+
+        result[idx].buffer_type = MYSQL_TYPE_STRING;
+        result[idx].buffer = mimeType;
+        result[idx].buffer_length = sizeof(mimeType);
+        result[idx].length = &mimeType_length;
+        result[idx].is_null = &mimeType_is_null;
+        idx++;
+
+        result[idx].buffer_type = MYSQL_TYPE_LONGLONG;
+        result[idx].buffer = &fileSize;
+        result[idx].is_null = &fileSize_is_null;
+        idx++;
+
+        result[idx].buffer_type = MYSQL_TYPE_TIMESTAMP;
+        result[idx].buffer = &imgCreateTime;
+        result[idx].is_null = &imgCreateTime_is_null;
+        idx++;
+
+        if (mysql_stmt_bind_result(stmt.get(), result) != 0) {
+            Logger::error("Failed to bind result: " + std::string(mysql_stmt_error(stmt.get())));
+            return posts;
+        }
+
+        mysql_stmt_store_result(stmt.get());
+
+        // 处理结果 - 合并相同帖子的图片
+        std::map<int, Post> postMap;
+        int currentPostId = -1;
+        
+        while (mysql_stmt_fetch(stmt.get()) == 0) {
+            int postPhysicalId = static_cast<int>(id);
+            
+            // 如果是新帖子，创建Post对象
+            if (postMap.find(postPhysicalId) == postMap.end()) {
+                Post post;
+                post.setId(postPhysicalId);
+                post.setPostId(std::string(postId, postId_length));
+                post.setUserId(static_cast<int>(userId_result));
+                post.setTitle(std::string(title, title_length));
+
+                if (!description_is_null) {
+                    post.setDescription(std::string(description, description_length));
+                }
+
+                post.setImageCount(imageCount);
+                post.setLikeCount(likeCount);
+                post.setFavoriteCount(favoriteCount);
+                post.setViewCount(viewCount);
+                post.setStatus(Post::stringToStatus(std::string(status, status_length)));
+
+                // 转换时间
+                struct tm tm_create = {0};
+                tm_create.tm_year = createTime.year - 1900;
+                tm_create.tm_mon = createTime.month - 1;
+                tm_create.tm_mday = createTime.day;
+                tm_create.tm_hour = createTime.hour;
+                tm_create.tm_min = createTime.minute;
+                tm_create.tm_sec = createTime.second;
+                post.setCreateTime(mktime(&tm_create));
+
+                struct tm tm_update = {0};
+                tm_update.tm_year = updateTime.year - 1900;
+                tm_update.tm_mon = updateTime.month - 1;
+                tm_update.tm_mday = updateTime.day;
+                tm_update.tm_hour = updateTime.hour;
+                tm_update.tm_min = updateTime.minute;
+                tm_update.tm_sec = updateTime.second;
+                post.setUpdateTime(mktime(&tm_update));
+
+                postMap[postPhysicalId] = post;
+            }
+
+            // 如果有图片数据，添加到Post
+            if (!imageId_is_null) {
+                Image image;
+                image.setPostId(postPhysicalId);
+                image.setImageId(std::string(imageId, imageId_length));
+                
+                if (!fileUrl_is_null) {
+                    image.setFileUrl(std::string(fileUrl, fileUrl_length));
+                }
+                if (!thumbnailUrl_is_null) {
+                    image.setThumbnailUrl(std::string(thumbnailUrl, thumbnailUrl_length));
+                }
+                if (!displayOrder_is_null) {
+                    image.setDisplayOrder(displayOrder);
+                }
+                if (!width_is_null) {
+                    image.setWidth(width);
+                }
+                if (!height_is_null) {
+                    image.setHeight(height);
+                }
+                if (!mimeType_is_null) {
+                    image.setMimeType(std::string(mimeType, mimeType_length));
+                }
+                if (!fileSize_is_null) {
+                    image.setFileSize(fileSize);
+                }
+                if (!imgCreateTime_is_null) {
+                    struct tm tm_img = {0};
+                    tm_img.tm_year = imgCreateTime.year - 1900;
+                    tm_img.tm_mon = imgCreateTime.month - 1;
+                    tm_img.tm_mday = imgCreateTime.day;
+                    tm_img.tm_hour = imgCreateTime.hour;
+                    tm_img.tm_min = imgCreateTime.minute;
+                    tm_img.tm_sec = imgCreateTime.second;
+                    image.setCreateTime(mktime(&tm_img));
+                }
+
+                postMap[postPhysicalId].addImage(image);
+            }
+        }
+
+        // 转换map为vector（保持原始顺序）
+        for (auto& pair : postMap) {
+            posts.push_back(pair.second);
+        }
+
+        // 记录查询结束时间
+        auto endTime = std::chrono::high_resolution_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(endTime - startTime);
+        
+        Logger::info("Query completed in " + std::to_string(duration.count()) + "ms, fetched " + 
+                     std::to_string(posts.size()) + " posts with images using optimized LEFT JOIN");
+        
+        // 如果查询时间过长，记录警告
+        if (duration.count() > 500) {
+            Logger::warning("Slow query detected: getRecentPostsWithImagesOptimized took " + 
+                           std::to_string(duration.count()) + "ms");
+        }
+
+    } catch (const std::exception& e) {
+        Logger::error("Exception in getRecentPostsWithImagesOptimized: " + std::string(e.what()));
+    }
+
+    return posts;
+}
+
 // 根据用户ID查找帖子列表（不包含图片）
 std::vector<Post> PostRepository::findByUserId(int userId, int page, int pageSize) {
     std::vector<Post> posts;
@@ -733,7 +1080,7 @@ std::vector<Post> PostRepository::findByUserId(int userId, int page, int pageSiz
         char postId[37] = {0};
         long long userId_result;
         char title[256] = {0};
-        char description[1024] = {0};
+        char description[4096] = {0};  // 增加缓冲区大小避免溢出
         int imageCount, likeCount, favoriteCount, viewCount;
         char status[20] = {0};
         MYSQL_TIME createTime, updateTime;
