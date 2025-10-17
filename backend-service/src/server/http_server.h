@@ -19,6 +19,7 @@ class ImageHandler;
 class PostHandler;
 class LikeHandler;
 class FavoriteHandler;
+class ShareHandler;
 
 /**
  * @brief HTTP server wrapper class
@@ -65,6 +66,7 @@ private:
     std::unique_ptr<PostHandler> postHandler_;
     std::unique_ptr<LikeHandler> likeHandler_;
     std::unique_ptr<FavoriteHandler> favoriteHandler_;
+    std::unique_ptr<ShareHandler> shareHandler_;
     std::string host_;
     int port_;
     bool running_;

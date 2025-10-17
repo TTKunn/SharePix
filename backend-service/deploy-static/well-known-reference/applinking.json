@@ -1,0 +1,20 @@
+{
+  "applinks": {
+    "apps": [],
+    "details": [
+      {
+        "appID": "YOUR_HARMONYOS_APP_ID",
+        "bundleID": "com.yourcompany.knot",
+        "paths": [
+          "/post/*",
+          "/user/*",
+          "/tag/*"
+        ]
+      }
+    ]
+  }
+}
+
+
+
+
