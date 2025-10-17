@@ -6,9 +6,7 @@
  */
 
 #include "id_generator.h"
-#include "base62_encoder.h"
 #include "logger.h"
-#include <mutex>
 
 // 生成图片业务ID
 std::string IdGenerator::generateImageId() {
@@ -102,76 +100,5 @@ std::string IdGenerator::generateUUID() {
     }
     
     return oss.str();
-}
-
-// 生成分享链接短码
-std::string IdGenerator::generateShareCode() {
-    // 生成雪花ID
-    int64_t snowflakeId = generateSnowflakeId();
-    
-    // Base62编码为8位短码
-    std::string shortCode = Base62Encoder::encode(snowflakeId, 8);
-    
-    Logger::debug("Generated share code: " + shortCode + " from snowflake ID: " + std::to_string(snowflakeId));
-    
-    return shortCode;
-}
-
-// 生成雪花ID（简化版单机实现）
-int64_t IdGenerator::generateSnowflakeId() {
-    // 雪花ID常量
-    static const int64_t EPOCH = 1609459200000LL; // 2021-01-01 00:00:00 UTC
-    static const int64_t MACHINE_ID_BITS = 10;
-    static const int64_t SEQUENCE_BITS = 12;
-    static const int64_t MAX_SEQUENCE = (1LL << SEQUENCE_BITS) - 1;  // 4095
-    static const int64_t MACHINE_ID = 0;  // 单机版使用固定机器ID
-    
-    // 静态变量保存状态
-    static int64_t lastTimestamp = -1;
-    static int64_t sequence = 0;
-    static std::mutex mutex;
-    
-    std::lock_guard<std::mutex> lock(mutex);
-    
-    // 获取当前时间戳（毫秒）
-    auto now = std::chrono::system_clock::now();
-    int64_t timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
-        now.time_since_epoch()
-    ).count();
-    
-    // 时钟回拨检测
-    if (timestamp < lastTimestamp) {
-        Logger::error("Clock moved backwards! Refusing to generate ID");
-        throw std::runtime_error("Clock moved backwards, refusing to generate snowflake ID");
-    }
-    
-    // 同一毫秒内，序列号自增
-    if (timestamp == lastTimestamp) {
-        sequence = (sequence + 1) & MAX_SEQUENCE;
-        
-        // 序列号溢出，等待下一毫秒
-        if (sequence == 0) {
-            // 忙等待到下一毫秒
-            while (timestamp <= lastTimestamp) {
-                now = std::chrono::system_clock::now();
-                timestamp = std::chrono::duration_cast<std::chrono::milliseconds>(
-                    now.time_since_epoch()
-                ).count();
-            }
-        }
-    } else {
-        // 新的毫秒，序列号重置
-        sequence = 0;
-    }
-    
-    lastTimestamp = timestamp;
-    
-    // 组装64位ID
-    // [0 - 1位符号] [41位时间戳] [10位机器ID] [12位序列号]
-    int64_t id = ((timestamp - EPOCH) << (MACHINE_ID_BITS + SEQUENCE_BITS))
-               | (MACHINE_ID << SEQUENCE_BITS)
-               | sequence;
-    
-    return id;
 }
 

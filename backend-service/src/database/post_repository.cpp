@@ -246,58 +246,6 @@ Post PostRepository::buildPostFromStatement(void* stmtPtr) {
     return post;
 }
 
-// 根据物理ID查找帖子（不包含图片）
-std::optional<Post> PostRepository::findById(int64_t id) {
-    try {
-        ConnectionGuard connGuard(DatabaseConnectionPool::getInstance());
-        if (!connGuard.isValid()) {
-            Logger::error("Failed to get database connection");
-            return std::nullopt;
-        }
-
-        MySQLStatement stmt(connGuard.get());
-        if (!stmt.isValid()) {
-            return std::nullopt;
-        }
-
-        const char* query = "SELECT * FROM posts WHERE id = ?";
-
-        if (mysql_stmt_prepare(stmt.get(), query, strlen(query)) != 0) {
-            Logger::error("Failed to prepare statement: " + std::string(mysql_stmt_error(stmt.get())));
-            return std::nullopt;
-        }
-
-        // 绑定参数
-        MYSQL_BIND bind[1];
-        memset(bind, 0, sizeof(bind));
-
-        bind[0].buffer_type = MYSQL_TYPE_LONGLONG;
-        bind[0].buffer = &id;
-
-        if (mysql_stmt_bind_param(stmt.get(), bind) != 0) {
-            Logger::error("Failed to bind parameters: " + std::string(mysql_stmt_error(stmt.get())));
-            return std::nullopt;
-        }
-
-        if (mysql_stmt_execute(stmt.get()) != 0) {
-            Logger::error("Failed to execute statement: " + std::string(mysql_stmt_error(stmt.get())));
-            return std::nullopt;
-        }
-
-        Post post = buildPostFromStatement(stmt.get());
-
-        if (post.getId() > 0) {
-            return post;
-        }
-
-        return std::nullopt;
-
-    } catch (const std::exception& e) {
-        Logger::error("Exception in findById: " + std::string(e.what()));
-        return std::nullopt;
-    }
-}
-
 // 根据业务ID查找帖子（不包含图片）
 std::optional<Post> PostRepository::findByPostId(const std::string& postId) {
     try {

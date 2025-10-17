@@ -38,13 +38,6 @@ public:
     bool createPost(Post& post);
     
     /**
-     * @brief 根据物理ID查找帖子（不包含图片）
-     * @param id 物理ID（自增主键）
-     * @return 如果找到返回Post对象，否则返回std::nullopt
-     */
-    std::optional<Post> findById(int64_t id);
-    
-    /**
      * @brief 根据业务ID查找帖子（不包含图片）
      * @param postId 业务逻辑ID（例：POST_2025Q4_ABC123）
      * @return 如果找到返回Post对象，否则返回std::nullopt

@@ -12,8 +12,6 @@
 #include <chrono>
 #include <sstream>
 #include <iomanip>
-#include <cstdint>
-#include <mutex>
 
 /**
  * @brief ID生成工具类
@@ -41,30 +39,8 @@ public:
      * @return 生成的文件名（UUID + 扩展名）
      */
     static std::string generateFileName(const std::string& extension);
-    
-    /**
-     * @brief 生成分享链接短码
-     * 
-     * 使用雪花算法生成唯一ID，然后Base62编码为8位短码
-     * 适用于短链接生成，保证全局唯一性
-     * 
-     * @return 8位Base62编码的短码（如: "kHr7ZS9a"）
-     */
-    static std::string generateShareCode();
 
 private:
-    /**
-     * @brief 生成雪花ID（简化版单机实现）
-     * 
-     * 64位雪花ID结构：
-     * - 1位符号位（0）
-     * - 41位时间戳（毫秒）
-     * - 10位机器ID
-     * - 12位序列号
-     * 
-     * @return 64位唯一ID
-     */
-    static int64_t generateSnowflakeId();
     /**
      * @brief 生成随机字符串
      * 
