@@ -47,13 +47,7 @@ void LikeHandler::handleLike(const httplib::Request& req, httplib::Response& res
         }
 
         // 2. 获取路径参数post_id
-        std::string postId;
-        if (req.path_params.count("post_id") > 0) {
-            postId = req.path_params.at("post_id");
-        } else {
-            sendJsonResponse(res, 400, false, "缺少帖子ID");
-            return;
-        }
+        std::string postId = req.path_params.at("post_id");
 
         // 3. 调用Service层进行点赞
         LikeResult result = likeService_->likePost(userId, postId);
@@ -84,13 +78,7 @@ void LikeHandler::handleUnlike(const httplib::Request& req, httplib::Response& r
         }
 
         // 2. 获取路径参数post_id
-        std::string postId;
-        if (req.path_params.count("post_id") > 0) {
-            postId = req.path_params.at("post_id");
-        } else {
-            sendJsonResponse(res, 400, false, "缺少帖子ID");
-            return;
-        }
+        std::string postId = req.path_params.at("post_id");
 
         // 3. 调用Service层进行取消点赞
         LikeResult result = likeService_->unlikePost(userId, postId);
@@ -121,13 +109,7 @@ void LikeHandler::handleGetLikeStatus(const httplib::Request& req, httplib::Resp
         }
 
         // 2. 获取路径参数post_id
-        std::string postId;
-        if (req.path_params.count("post_id") > 0) {
-            postId = req.path_params.at("post_id");
-        } else {
-            sendJsonResponse(res, 400, false, "缺少帖子ID");
-            return;
-        }
+        std::string postId = req.path_params.at("post_id");
 
         // 3. 调用Service层查询点赞状态
         LikeStatusResult result = likeService_->getLikeStatus(userId, postId);

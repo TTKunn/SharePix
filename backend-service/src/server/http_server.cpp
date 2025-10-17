@@ -11,6 +11,7 @@
 #include "api/post_handler.h"
 #include "api/like_handler.h"
 #include "api/favorite_handler.h"
+#include "api/follow_handler.h"
 #include "utils/config_manager.h"
 #include "utils/logger.h"
 #include "database/connection_pool.h"
@@ -25,6 +26,7 @@ HttpServer::HttpServer()
       postHandler_(std::make_unique<PostHandler>()),
       likeHandler_(std::make_unique<LikeHandler>()),
       favoriteHandler_(std::make_unique<FavoriteHandler>()),
+      followHandler_(std::make_unique<FollowHandler>()),
       host_("0.0.0.0"),
       port_(8080),
       running_(false) {
@@ -135,9 +137,12 @@ void HttpServer::setupRoutes() {
     // 注册收藏相关路由（必须在PostHandler之前注册，避免路由冲突）
     favoriteHandler_->registerRoutes(*server_);
 
+    // 注册关注相关路由
+    followHandler_->registerRoutes(*server_);
+
     // 注册帖子相关路由
     postHandler_->registerRoutes(*server_);
-    
+
     // 注册认证的通配符路由（必须最后注册，避免覆盖其他/users/*路由）
     authHandler_->registerWildcardRoutes(*server_);
 
@@ -174,9 +179,10 @@ void HttpServer::setupCORS() {
     // 避免重复设置 post_routing_handler 导致覆盖,这是导致 BUG #1 的根因
 
     // Handle OPTIONS requests
-    server_->Options(".*", [](const httplib::Request& req, httplib::Response& res) {
-        res.status = 204;
-    });
+    // ⚠️ 临时注释测试 - 怀疑正则路由 ".*" 干扰POST路由匹配
+    // server_->Options(".*", [](const httplib::Request& req, httplib::Response& res) {
+    //     res.status = 204;
+    // });
 }
 
 void HttpServer::setupErrorHandlers() {

@@ -68,6 +68,8 @@ public:
     const std::string& getGender() const { return gender_; }
     const std::string& getLocation() const { return location_; }
     int getDeviceCount() const { return deviceCount_; }
+    int getFollowingCount() const { return followingCount_; }
+    int getFollowerCount() const { return followerCount_; }
     std::time_t getCreateTime() const { return createTime_; }
     std::time_t getUpdateTime() const { return updateTime_; }
 
@@ -87,6 +89,8 @@ public:
     void setGender(const std::string& gender) { gender_ = gender; }
     void setLocation(const std::string& location) { location_ = location; }
     void setDeviceCount(int deviceCount) { deviceCount_ = deviceCount; }
+    void setFollowingCount(int count) { followingCount_ = count; }
+    void setFollowerCount(int count) { followerCount_ = count; }
     void setCreateTime(std::time_t createTime) { createTime_ = createTime; }
     void setUpdateTime(std::time_t updateTime) { updateTime_ = updateTime; }
     
@@ -160,6 +164,8 @@ private:
     std::string gender_;          // 性别
     std::string location_;        // 所在地
     int deviceCount_;             // 绑定设备数
+    int followingCount_;          // 关注数（我关注的人数）
+    int followerCount_;           // 粉丝数（关注我的人数）
     std::time_t createTime_;      // 创建时间
     std::time_t updateTime_;      // 更新时间
 };

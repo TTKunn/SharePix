@@ -2,7 +2,7 @@
   "server": {
     "host": "0.0.0.0",
     "port": 8080,
-    "base_url": "http://8.138.115.164:8080",
+    "base_url": "http://43.142.157.145:8080",
     "thread_pool_size": 8,
     "read_timeout": 30,
     "write_timeout": 30,

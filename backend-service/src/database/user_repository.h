@@ -8,6 +8,7 @@
 #pragma once
 
 #include "models/user.h"
+#include <mysql/mysql.h>
 #include <optional>
 #include <string>
 
@@ -153,6 +154,53 @@ public:
      * @return true 已被使用，false 未被使用
      */
     bool phoneExistsForOtherUser(const std::string& phone, int excludeUserId);
+
+    /**
+     * @brief 原子递增用户的关注数
+     *
+     * @param conn MySQL连接
+     * @param userId 用户ID（物理ID）
+     * @return true 更新成功，false 更新失败
+     */
+    bool incrementFollowingCount(MYSQL* conn, int64_t userId);
+
+    /**
+     * @brief 原子递减用户的关注数
+     *
+     * @param conn MySQL连接
+     * @param userId 用户ID（物理ID）
+     * @return true 更新成功，false 更新失败
+     */
+    bool decrementFollowingCount(MYSQL* conn, int64_t userId);
+
+    /**
+     * @brief 原子递增用户的粉丝数
+     *
+     * @param conn MySQL连接
+     * @param userId 用户ID（物理ID）
+     * @return true 更新成功，false 更新失败
+     */
+    bool incrementFollowerCount(MYSQL* conn, int64_t userId);
+
+    /**
+     * @brief 原子递减用户的粉丝数
+     *
+     * @param conn MySQL连接
+     * @param userId 用户ID（物理ID）
+     * @return true 更新成功，false 更新失败
+     */
+    bool decrementFollowerCount(MYSQL* conn, int64_t userId);
+
+    /**
+     * @brief 获取用户统计信息
+     *
+     * 包括关注数、粉丝数、帖子数、获赞总数
+     *
+     * @param conn MySQL连接
+     * @param userId 用户业务ID
+     * @return UserStats对象（未找到返回std::nullopt）
+     */
+    std::optional<class UserStats> getUserStats(MYSQL* conn, const std::string& userId);
 
 private:
     /**

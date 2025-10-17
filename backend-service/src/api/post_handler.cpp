@@ -38,32 +38,32 @@ void PostHandler::registerRoutes(httplib::Server& server) {
     server.Put("/api/v1/posts/:post_id", [this](const httplib::Request& req, httplib::Response& res) {
         handleUpdatePost(req, res);
     });
-    
+
     // 删除帖子
     server.Delete("/api/v1/posts/:post_id", [this](const httplib::Request& req, httplib::Response& res) {
         handleDeletePost(req, res);
     });
-    
+
     // 获取Feed流
     server.Get("/api/v1/posts", [this](const httplib::Request& req, httplib::Response& res) {
         handleGetRecentPosts(req, res);
     });
-    
+
     // 获取用户帖子列表
     server.Get("/api/v1/users/:user_id/posts", [this](const httplib::Request& req, httplib::Response& res) {
         handleGetUserPosts(req, res);
     });
-    
+
     // 向帖子添加图片
     server.Post("/api/v1/posts/:post_id/images", [this](const httplib::Request& req, httplib::Response& res) {
         handleAddImageToPost(req, res);
     });
-    
+
     // 删除帖子中的图片
     server.Delete("/api/v1/posts/:post_id/images/:image_id", [this](const httplib::Request& req, httplib::Response& res) {
         handleRemoveImageFromPost(req, res);
     });
-    
+
     // 调整图片顺序
     server.Put("/api/v1/posts/:post_id/images/order", [this](const httplib::Request& req, httplib::Response& res) {
         handleReorderImages(req, res);

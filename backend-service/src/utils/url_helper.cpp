@@ -9,7 +9,7 @@
 #include "utils/config_manager.h"
 
 // 默认的服务器URL (如果配置文件中未设置server.base_url,则使用此默认值)
-const std::string DEFAULT_BASE_URL = "http://8.138.115.164:8080";
+const std::string DEFAULT_BASE_URL = "http://43.142.157.145:8080";
 
 // 为路径添加服务器URL前缀
 std::string UrlHelper::toFullUrl(const std::string& path) {

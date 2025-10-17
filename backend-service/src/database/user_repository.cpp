@@ -8,36 +8,12 @@
 #include "database/user_repository.h"
 #include "database/connection_pool.h"
 #include "database/connection_guard.h"
+#include "database/mysql_statement.h"
+#include "models/user_stats.h"
 #include "utils/logger.h"
 #include <mysql/mysql.h>
 #include <cstring>
 #include <memory>
-
-// RAII 封装 MYSQL_STMT
-class MySQLStatement {
-public:
-    explicit MySQLStatement(MYSQL* conn) {
-        stmt_ = mysql_stmt_init(conn);
-        if (!stmt_) {
-            Logger::error("Failed to initialize MySQL statement");
-        }
-    }
-    
-    ~MySQLStatement() {
-        if (stmt_) {
-            mysql_stmt_close(stmt_);
-        }
-    }
-    
-    MYSQL_STMT* get() { return stmt_; }
-    
-    // 禁止拷贝
-    MySQLStatement(const MySQLStatement&) = delete;
-    MySQLStatement& operator=(const MySQLStatement&) = delete;
-    
-private:
-    MYSQL_STMT* stmt_;
-};
 
 // 构造函数
 UserRepository::UserRepository() {
@@ -158,8 +134,8 @@ User UserRepository::buildUserFromStatement(void* stmtPtr) {
     MYSQL_STMT* stmt = static_cast<MYSQL_STMT*>(stmtPtr);
     User user;
     
-    // 准备结果绑定
-    MYSQL_BIND result[17];
+    // 准备结果绑定（19个字段：原17个 + following_count + follower_count）
+    MYSQL_BIND result[19];
     memset(result, 0, sizeof(result));
     
     // 定义变量存储结果
@@ -179,6 +155,8 @@ User UserRepository::buildUserFromStatement(void* stmtPtr) {
     char location[101] = {0};
     int deviceCount;
     MYSQL_TIME createTime, updateTime;
+    int followingCount;
+    int followerCount;
     
     unsigned long userId_length, username_length, password_length, salt_length;
     unsigned long realName_length, phone_length, email_length;
@@ -288,6 +266,14 @@ User UserRepository::buildUserFromStatement(void* stmtPtr) {
     result[16].buffer_type = MYSQL_TYPE_TIMESTAMP;
     result[16].buffer = &updateTime;
     
+    // following_count
+    result[17].buffer_type = MYSQL_TYPE_LONG;
+    result[17].buffer = &followingCount;
+    
+    // follower_count
+    result[18].buffer_type = MYSQL_TYPE_LONG;
+    result[18].buffer = &followerCount;
+    
     if (mysql_stmt_bind_result(stmt, result) != 0) {
         Logger::error("Failed to bind result: " + std::string(mysql_stmt_error(stmt)));
         return user;
@@ -346,6 +332,10 @@ User UserRepository::buildUserFromStatement(void* stmtPtr) {
         tm_update.tm_min = updateTime.minute;
         tm_update.tm_sec = updateTime.second;
         user.setUpdateTime(mktime(&tm_update));
+        
+        // 设置关注计数
+        user.setFollowingCount(followingCount);
+        user.setFollowerCount(followerCount);
     }
     
     return user;
@@ -819,6 +809,302 @@ bool UserRepository::phoneExistsForOtherUser(const std::string& phone, int exclu
     } catch (const std::exception& e) {
         Logger::error("phoneExistsForOtherUser异常: " + std::string(e.what()));
         return false;
+    }
+}
+
+// 原子递增用户的关注数
+bool UserRepository::incrementFollowingCount(MYSQL* conn, int64_t userId) {
+    try {
+        if (!conn) {
+            Logger::error("数据库连接为空");
+            return false;
+        }
+
+        MySQLStatement stmt(conn);
+        if (!stmt.isValid()) {
+            return false;
+        }
+
+        // SQL 原子更新语句
+        const char* query = "UPDATE users SET following_count = following_count + 1 WHERE id = ?";
+
+        if (mysql_stmt_prepare(stmt.get(), query, strlen(query)) != 0) {
+            Logger::error("预编译语句失败: " + std::string(mysql_stmt_error(stmt.get())));
+            return false;
+        }
+
+        // 绑定参数
+        MYSQL_BIND bind[1];
+        memset(bind, 0, sizeof(bind));
+
+        bind[0].buffer_type = MYSQL_TYPE_LONGLONG;
+        bind[0].buffer = &userId;
+
+        if (mysql_stmt_bind_param(stmt.get(), bind) != 0) {
+            Logger::error("绑定参数失败: " + std::string(mysql_stmt_error(stmt.get())));
+            return false;
+        }
+
+        if (mysql_stmt_execute(stmt.get()) != 0) {
+            Logger::error("执行SQL失败: " + std::string(mysql_stmt_error(stmt.get())));
+            return false;
+        }
+
+        Logger::debug("关注数+1 (user_id=" + std::to_string(userId) + ")");
+        return true;
+
+    } catch (const std::exception& e) {
+        Logger::error("incrementFollowingCount异常: " + std::string(e.what()));
+        return false;
+    }
+}
+
+// 原子递减用户的关注数
+bool UserRepository::decrementFollowingCount(MYSQL* conn, int64_t userId) {
+    try {
+        if (!conn) {
+            Logger::error("数据库连接为空");
+            return false;
+        }
+
+        MySQLStatement stmt(conn);
+        if (!stmt.isValid()) {
+            return false;
+        }
+
+        // SQL 原子更新语句（防止减成负数）
+        const char* query = "UPDATE users SET following_count = following_count - 1 WHERE id = ? AND following_count > 0";
+
+        if (mysql_stmt_prepare(stmt.get(), query, strlen(query)) != 0) {
+            Logger::error("预编译语句失败: " + std::string(mysql_stmt_error(stmt.get())));
+            return false;
+        }
+
+        // 绑定参数
+        MYSQL_BIND bind[1];
+        memset(bind, 0, sizeof(bind));
+
+        bind[0].buffer_type = MYSQL_TYPE_LONGLONG;
+        bind[0].buffer = &userId;
+
+        if (mysql_stmt_bind_param(stmt.get(), bind) != 0) {
+            Logger::error("绑定参数失败: " + std::string(mysql_stmt_error(stmt.get())));
+            return false;
+        }
+
+        if (mysql_stmt_execute(stmt.get()) != 0) {
+            Logger::error("执行SQL失败: " + std::string(mysql_stmt_error(stmt.get())));
+            return false;
+        }
+
+        Logger::debug("关注数-1 (user_id=" + std::to_string(userId) + ")");
+        return true;
+
+    } catch (const std::exception& e) {
+        Logger::error("decrementFollowingCount异常: " + std::string(e.what()));
+        return false;
+    }
+}
+
+// 原子递增用户的粉丝数
+bool UserRepository::incrementFollowerCount(MYSQL* conn, int64_t userId) {
+    try {
+        if (!conn) {
+            Logger::error("数据库连接为空");
+            return false;
+        }
+
+        MySQLStatement stmt(conn);
+        if (!stmt.isValid()) {
+            return false;
+        }
+
+        // SQL 原子更新语句
+        const char* query = "UPDATE users SET follower_count = follower_count + 1 WHERE id = ?";
+
+        if (mysql_stmt_prepare(stmt.get(), query, strlen(query)) != 0) {
+            Logger::error("预编译语句失败: " + std::string(mysql_stmt_error(stmt.get())));
+            return false;
+        }
+
+        // 绑定参数
+        MYSQL_BIND bind[1];
+        memset(bind, 0, sizeof(bind));
+
+        bind[0].buffer_type = MYSQL_TYPE_LONGLONG;
+        bind[0].buffer = &userId;
+
+        if (mysql_stmt_bind_param(stmt.get(), bind) != 0) {
+            Logger::error("绑定参数失败: " + std::string(mysql_stmt_error(stmt.get())));
+            return false;
+        }
+
+        if (mysql_stmt_execute(stmt.get()) != 0) {
+            Logger::error("执行SQL失败: " + std::string(mysql_stmt_error(stmt.get())));
+            return false;
+        }
+
+        Logger::debug("粉丝数+1 (user_id=" + std::to_string(userId) + ")");
+        return true;
+
+    } catch (const std::exception& e) {
+        Logger::error("incrementFollowerCount异常: " + std::string(e.what()));
+        return false;
+    }
+}
+
+// 原子递减用户的粉丝数
+bool UserRepository::decrementFollowerCount(MYSQL* conn, int64_t userId) {
+    try {
+        if (!conn) {
+            Logger::error("数据库连接为空");
+            return false;
+        }
+
+        MySQLStatement stmt(conn);
+        if (!stmt.isValid()) {
+            return false;
+        }
+
+        // SQL 原子更新语句（防止减成负数）
+        const char* query = "UPDATE users SET follower_count = follower_count - 1 WHERE id = ? AND follower_count > 0";
+
+        if (mysql_stmt_prepare(stmt.get(), query, strlen(query)) != 0) {
+            Logger::error("预编译语句失败: " + std::string(mysql_stmt_error(stmt.get())));
+            return false;
+        }
+
+        // 绑定参数
+        MYSQL_BIND bind[1];
+        memset(bind, 0, sizeof(bind));
+
+        bind[0].buffer_type = MYSQL_TYPE_LONGLONG;
+        bind[0].buffer = &userId;
+
+        if (mysql_stmt_bind_param(stmt.get(), bind) != 0) {
+            Logger::error("绑定参数失败: " + std::string(mysql_stmt_error(stmt.get())));
+            return false;
+        }
+
+        if (mysql_stmt_execute(stmt.get()) != 0) {
+            Logger::error("执行SQL失败: " + std::string(mysql_stmt_error(stmt.get())));
+            return false;
+        }
+
+        Logger::debug("粉丝数-1 (user_id=" + std::to_string(userId) + ")");
+        return true;
+
+    } catch (const std::exception& e) {
+        Logger::error("decrementFollowerCount异常: " + std::string(e.what()));
+        return false;
+    }
+}
+
+// 获取用户统计信息
+std::optional<UserStats> UserRepository::getUserStats(MYSQL* conn, const std::string& userId) {
+    try {
+        if (!conn) {
+            Logger::error("数据库连接为空");
+            return std::nullopt;
+        }
+
+        MySQLStatement stmt(conn);
+        if (!stmt.isValid()) {
+            return std::nullopt;
+        }
+
+        // SQL 查询语句 - 联表查询用户统计
+        const char* query = 
+            "SELECT u.user_id, u.following_count, u.follower_count, "
+            "COUNT(DISTINCT p.id) as post_count, "
+            "COALESCE(SUM(p.like_count), 0) as total_likes "
+            "FROM users u "
+            "LEFT JOIN posts p ON u.id = p.user_id "
+            "WHERE u.user_id = ? "
+            "GROUP BY u.id";
+
+        if (mysql_stmt_prepare(stmt.get(), query, strlen(query)) != 0) {
+            Logger::error("预编译语句失败: " + std::string(mysql_stmt_error(stmt.get())));
+            return std::nullopt;
+        }
+
+        // 绑定参数
+        MYSQL_BIND bind[1];
+        memset(bind, 0, sizeof(bind));
+
+        // 需要可修改的副本
+        std::string userIdCopy = userId;
+        unsigned long userIdLength = userIdCopy.length();
+
+        bind[0].buffer_type = MYSQL_TYPE_STRING;
+        bind[0].buffer = const_cast<char*>(userIdCopy.c_str());
+        bind[0].buffer_length = userIdCopy.length();
+        bind[0].length = &userIdLength;
+
+        if (mysql_stmt_bind_param(stmt.get(), bind) != 0) {
+            Logger::error("绑定参数失败: " + std::string(mysql_stmt_error(stmt.get())));
+            return std::nullopt;
+        }
+
+        if (mysql_stmt_execute(stmt.get()) != 0) {
+            Logger::error("执行SQL失败: " + std::string(mysql_stmt_error(stmt.get())));
+            return std::nullopt;
+        }
+
+        // 绑定结果
+        char user_id_buf[256];
+        int following_count = 0, follower_count = 0, post_count = 0, total_likes = 0;
+        unsigned long user_id_length;
+        bool is_null[5];
+
+        MYSQL_BIND result[5];
+        memset(result, 0, sizeof(result));
+
+        result[0].buffer_type = MYSQL_TYPE_STRING;
+        result[0].buffer = user_id_buf;
+        result[0].buffer_length = sizeof(user_id_buf);
+        result[0].length = &user_id_length;
+        result[0].is_null = &is_null[0];
+
+        result[1].buffer_type = MYSQL_TYPE_LONG;
+        result[1].buffer = &following_count;
+        result[1].is_null = &is_null[1];
+
+        result[2].buffer_type = MYSQL_TYPE_LONG;
+        result[2].buffer = &follower_count;
+        result[2].is_null = &is_null[2];
+
+        result[3].buffer_type = MYSQL_TYPE_LONG;
+        result[3].buffer = &post_count;
+        result[3].is_null = &is_null[3];
+
+        result[4].buffer_type = MYSQL_TYPE_LONG;
+        result[4].buffer = &total_likes;
+        result[4].is_null = &is_null[4];
+
+        if (mysql_stmt_bind_result(stmt.get(), result) != 0) {
+            Logger::error("绑定结果失败: " + std::string(mysql_stmt_error(stmt.get())));
+            return std::nullopt;
+        }
+
+        // 获取结果
+        if (mysql_stmt_fetch(stmt.get()) == 0) {
+            user_id_buf[user_id_length] = '\0';
+            UserStats stats(
+                std::string(user_id_buf),
+                following_count,
+                follower_count,
+                post_count,
+                total_likes
+            );
+            return stats;
+        }
+
+        return std::nullopt;
+
+    } catch (const std::exception& e) {
+        Logger::error("getUserStats异常: " + std::string(e.what()));
+        return std::nullopt;
     }
 }
 

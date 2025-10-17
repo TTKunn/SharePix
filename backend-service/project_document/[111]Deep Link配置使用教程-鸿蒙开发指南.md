@@ -313,7 +313,7 @@ export default class EntryAbility extends UIAbility {
     try {
       // 调用后端API解析短码
       // GET https://knot.app/api/v1/share/:code
-      const response = await fetch(`http://8.138.115.164:8080/api/v1/share/${shortCode}`);
+      const response = await fetch(`http://43.142.157.145:8080/api/v1/share/${shortCode}`);
       const data = await response.json();
 
       if (data.success && data.data.post) {
@@ -437,7 +437,7 @@ struct Index {
  * 调用后端API创建分享链接
  */
 async function createShareLink(postId: string, token: string): Promise<{ shortCode: string; shortUrl: string }> {
-  const response = await fetch(`http://8.138.115.164:8080/api/v1/posts/${postId}/share`, {
+  const response = await fetch(`http://43.142.157.145:8080/api/v1/posts/${postId}/share`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -946,7 +946,7 @@ sequenceDiagram
  * @param token JWT访问令牌
  */
 async function createShareLink(postId: string, token: string): Promise<ShareLinkResult> {
-  const response = await fetch(`http://8.138.115.164:8080/api/v1/posts/${postId}/share`, {
+  const response = await fetch(`http://43.142.157.145:8080/api/v1/posts/${postId}/share`, {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${token}`,
@@ -962,7 +962,7 @@ async function createShareLink(postId: string, token: string): Promise<ShareLink
 
   return {
     shortCode: data.data.short_code,        // 短码：ABC12345
-    shortUrl: data.data.short_url,          // 短URL：http://8.138.115.164:8080/s/ABC12345
+    shortUrl: data.data.short_url,          // 短URL：http://43.142.157.145:8080/s/ABC12345
     postId: data.data.post_id,              // 帖子ID
     createTime: data.data.create_time,      // 创建时间
     expireTime: data.data.expire_time       // 过期时间（null表示永久）
@@ -1043,7 +1043,7 @@ async function sharePost(postId: string, token: string) {
  * 解析短链接（在EntryAbility中调用）
  */
 async function resolveShortLink(shortCode: string): Promise<PostData> {
-  const response = await fetch(`http://8.138.115.164:8080/api/v1/share/${shortCode}`);
+  const response = await fetch(`http://43.142.157.145:8080/api/v1/share/${shortCode}`);
   const data = await response.json();
 
   if (!data.success) {
@@ -1133,7 +1133,7 @@ export struct ShareButton {
   }
 
   async createShareLink(): Promise<{ shortCode: string; shortUrl: string }> {
-    const response = await fetch(`http://8.138.115.164:8080/api/v1/posts/${this.postId}/share`, {
+    const response = await fetch(`http://43.142.157.145:8080/api/v1/posts/${this.postId}/share`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${this.token}`,
@@ -1205,7 +1205,7 @@ struct PostDetail {
       this.loading = true;
       
       // 调用后端API获取帖子详情
-      const response = await fetch(`http://8.138.115.164:8080/api/v1/posts/${this.postId}`);
+      const response = await fetch(`http://43.142.157.145:8080/api/v1/posts/${this.postId}`);
       const data = await response.json();
       
       if (data.success) {
@@ -1372,7 +1372,7 @@ export default class EntryAbility extends UIAbility {
     hilog.info(DOMAIN, TAG, `Resolving short link: ${shortCode}`);
 
     try {
-      const response = await fetch(`http://8.138.115.164:8080/api/v1/share/${shortCode}`);
+      const response = await fetch(`http://43.142.157.145:8080/api/v1/share/${shortCode}`);
       const data = await response.json();
 
       if (data.success && data.data.post) {
@@ -1471,7 +1471,7 @@ hdc shell bm dump -n com.knot.app
 
 ```bash
 # 直接测试后端API
-curl http://8.138.115.164:8080/api/v1/share/ABC12345
+curl http://43.142.157.145:8080/api/v1/share/ABC12345
 
 # 应该返回帖子完整信息
 ```
@@ -1862,7 +1862,7 @@ class ShortLinkCache {
   }
 
   private async fetchFromApi(shortCode: string): Promise<PostData> {
-    const response = await fetch(`http://8.138.115.164:8080/api/v1/share/${shortCode}`);
+    const response = await fetch(`http://43.142.157.145:8080/api/v1/share/${shortCode}`);
     const data = await response.json();
     return data.data.post;
   }
@@ -2039,7 +2039,7 @@ curl -I https://knot.app/.well-known/applinking.json
 curl https://knot.app/.well-known/applinking.json
 
 # 测试后端API
-curl http://8.138.115.164:8080/api/v1/share/ABC12345
+curl http://43.142.157.145:8080/api/v1/share/ABC12345
 ```
 
 ### D. 常用链接

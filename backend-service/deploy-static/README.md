@@ -439,7 +439,7 @@ curl http://localhost:8080/api/v1/images
 curl http://localhost:8081/api-docs.html
 
 # 从外部访问（替换为您的服务器IP）
-curl http://8.138.115.164:8080/api/v1/images
+curl http://43.142.157.145:8080/api/v1/images
 curl http://8.138.115.164:8081/api-docs.html
 ```
 

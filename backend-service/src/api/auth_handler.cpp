@@ -77,7 +77,8 @@ void AuthHandler::registerRoutes(httplib::Server& server) {
 // 注册通配符路由（必须最后注册）
 void AuthHandler::registerWildcardRoutes(httplib::Server& server) {
     // 获取用户公开信息 (使用正则表达式，必须放在最后)
-    server.Get(R"(/api/v1/users/([^/]+))", [this](const httplib::Request& req, httplib::Response& res) {
+    // 添加$结尾锚点，避免匹配 /api/v1/users/{id}/follow 等带子路径的URL
+    server.Get(R"(/api/v1/users/([^/]+)$)", [this](const httplib::Request& req, httplib::Response& res) {
         handleGetUserPublicInfo(req, res);
     });
 

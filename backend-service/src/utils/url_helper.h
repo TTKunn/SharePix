@@ -19,10 +19,10 @@ public:
     /**
      * @brief 为路径添加服务器URL前缀
      * 
-     * 自动从配置文件读取server.base_url,如果未配置则使用默认值 http://8.138.115.164:8080
-     * 
+     * 自动从配置文件读取server.base_url,如果未配置则使用默认值 http://43.142.157.145:8080
+     *
      * @param path 相对路径 (如 /uploads/images/xxx.jpg)
-     * @return 完整URL (如 http://8.138.115.164:8080/uploads/images/xxx.jpg)
+     * @return 完整URL (如 http://43.142.157.145:8080/uploads/images/xxx.jpg)
      * 
      * 特殊情况处理:
      * - 如果path为空,返回空字符串

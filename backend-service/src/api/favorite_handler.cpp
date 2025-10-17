@@ -52,13 +52,7 @@ void FavoriteHandler::handleFavorite(const httplib::Request& req, httplib::Respo
         }
 
         // 2. 获取路径参数post_id
-        std::string postId;
-        if (req.path_params.count("post_id") > 0) {
-            postId = req.path_params.at("post_id");
-        } else {
-            sendJsonResponse(res, 400, false, "缺少帖子ID");
-            return;
-        }
+        std::string postId = req.path_params.at("post_id");
 
         Logger::info("User " + std::to_string(userId) + " attempting to favorite post: " + postId);
 
@@ -91,13 +85,7 @@ void FavoriteHandler::handleUnfavorite(const httplib::Request& req, httplib::Res
         }
 
         // 2. 获取路径参数post_id
-        std::string postId;
-        if (req.path_params.count("post_id") > 0) {
-            postId = req.path_params.at("post_id");
-        } else {
-            sendJsonResponse(res, 400, false, "缺少帖子ID");
-            return;
-        }
+        std::string postId = req.path_params.at("post_id");
 
         Logger::info("User " + std::to_string(userId) + " attempting to unfavorite post: " + postId);
 
@@ -130,13 +118,7 @@ void FavoriteHandler::handleGetFavoriteStatus(const httplib::Request& req, httpl
         }
 
         // 2. 获取路径参数post_id
-        std::string postId;
-        if (req.path_params.count("post_id") > 0) {
-            postId = req.path_params.at("post_id");
-        } else {
-            sendJsonResponse(res, 400, false, "缺少帖子ID");
-            return;
-        }
+        std::string postId = req.path_params.at("post_id");
 
         // 3. 调用Service层查询收藏状态
         FavoriteStatusResult result = favoriteService_->getFavoriteStatus(userId, postId);

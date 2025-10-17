@@ -41,13 +41,13 @@ void ImageHandler::registerRoutes(httplib::Server& server) {
         handleGetById(req, res);
     });
     
-    // PUT /api/v1/images/:id - 更新图文配文
-    server.Put("/api/v1/images/:id", [this](const httplib::Request& req, httplib::Response& res) {
+    // PUT /api/v1/images/:id - 更新图文配文 (使用正则表达式以兼容cpp-httplib 0.26.0)
+    server.Put(R"(/api/v1/images/(\d+))", [this](const httplib::Request& req, httplib::Response& res) {
         handleUpdate(req, res);
     });
     
-    // DELETE /api/v1/images/:id - 删除图片
-    server.Delete("/api/v1/images/:id", [this](const httplib::Request& req, httplib::Response& res) {
+    // DELETE /api/v1/images/:id - 删除图片 (使用正则表达式以兼容cpp-httplib 0.26.0)
+    server.Delete(R"(/api/v1/images/(\d+))", [this](const httplib::Request& req, httplib::Response& res) {
         handleDelete(req, res);
     });
     
@@ -196,8 +196,12 @@ void ImageHandler::handleUpdate(const httplib::Request& req, httplib::Response& 
             return;
         }
         
-        // 2. 获取图片ID
-        std::string imageId = req.path_params.at("id");
+        // 2. 从正则匹配中获取图片ID (cpp-httplib 0.26.0兼容)
+        std::string imageId = req.matches.size() > 1 ? req.matches[1].str() : "";
+        if (imageId.empty()) {
+            sendJsonResponse(res, 400, false, "缺少图片ID参数");
+            return;
+        }
         
         // 3. 解析JSON请求体
         Json::Value jsonBody;
@@ -246,8 +250,12 @@ void ImageHandler::handleDelete(const httplib::Request& req, httplib::Response& 
             return;
         }
         
-        // 2. 获取图片ID
-        std::string imageId = req.path_params.at("id");
+        // 2. 从正则匹配中获取图片ID (cpp-httplib 0.26.0兼容)
+        std::string imageId = req.matches.size() > 1 ? req.matches[1].str() : "";
+        if (imageId.empty()) {
+            sendJsonResponse(res, 400, false, "缺少图片ID参数");
+            return;
+        }
         
         // 3. 调用Service删除
         bool success = imageService_->deleteImage(imageId, userId);

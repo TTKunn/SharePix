@@ -14,13 +14,15 @@
 // 默认构造函数
 User::User()
     : id_(0), role_(UserRole::USER), status_(UserStatus::ACTIVE),
-      deviceCount_(0), createTime_(0), updateTime_(0) {
+      deviceCount_(0), followingCount_(0), followerCount_(0),
+      createTime_(0), updateTime_(0) {
 }
 
 // 带参数的构造函数
 User::User(int id, const std::string& userId, const std::string& username, const std::string& phone)
     : id_(id), userId_(userId), username_(username), phone_(phone),
       role_(UserRole::USER), status_(UserStatus::ACTIVE), deviceCount_(0),
+      followingCount_(0), followerCount_(0),
       createTime_(std::time(nullptr)), updateTime_(std::time(nullptr)) {
 }
 
@@ -44,6 +46,8 @@ Json::Value User::toJson(bool includeSecrets) const {
     json["gender"] = gender_;
     json["location"] = location_;
     json["device_count"] = deviceCount_;
+    json["following_count"] = followingCount_;
+    json["follower_count"] = followerCount_;
     json["create_time"] = static_cast<Json::Int64>(createTime_);
     json["update_time"] = static_cast<Json::Int64>(updateTime_);
 
