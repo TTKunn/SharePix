@@ -40,6 +40,7 @@ Json::Value Post::toJson(bool includeImages) const {
     json["id"] = id_;
     json["post_id"] = postId_;
     json["user_id"] = userLogicalId_;  // 返回逻辑ID（前端使用）
+    json["username"] = username_;      // 返回用户昵称（v2.5.1新增）
     json["title"] = title_;
     json["description"] = description_;
     json["image_count"] = imageCount_;
@@ -88,6 +89,11 @@ Post Post::fromJson(const Json::Value& j) {
             // 新格式（逻辑ID）
             post.userLogicalId_ = j["user_id"].asString();
         }
+    }
+    
+    // 解析username字段（v2.5.1新增）
+    if (j.isMember("username") && j["username"].isString()) {
+        post.username_ = j["username"].asString();
     }
     
     if (j.isMember("title") && j["title"].isString()) {

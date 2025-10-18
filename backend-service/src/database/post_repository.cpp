@@ -260,13 +260,14 @@ std::optional<Post> PostRepository::findByPostId(const std::string& postId) {
             return std::nullopt;
         }
 
-        // 修改SQL查询，添加LEFT JOIN获取用户逻辑ID
+        // 修改SQL查询，添加LEFT JOIN获取用户逻辑ID和username（v2.5.1）
         const char* query =
             "SELECT "
             "  p.id, p.post_id, p.user_id, p.title, p.description, "
             "  p.image_count, p.like_count, p.favorite_count, p.view_count, "
             "  p.status, p.create_time, p.update_time, "
-            "  COALESCE(u.user_id, '') AS user_logical_id "
+            "  COALESCE(u.user_id, '') AS user_logical_id, "
+            "  COALESCE(u.username, '') AS username "
             "FROM posts p "
             "LEFT JOIN users u ON p.user_id = u.id "
             "WHERE p.post_id = ?";
@@ -294,8 +295,8 @@ std::optional<Post> PostRepository::findByPostId(const std::string& postId) {
             return std::nullopt;
         }
 
-        // 准备结果绑定（13个字段：原12个 + user_logical_id）
-        MYSQL_BIND result[13];
+        // 准备结果绑定（14个字段：原12个 + user_logical_id + username）
+        MYSQL_BIND result[14];
         memset(result, 0, sizeof(result));
 
         // 定义变量存储结果
@@ -308,9 +309,10 @@ std::optional<Post> PostRepository::findByPostId(const std::string& postId) {
         char status[20] = {0};
         MYSQL_TIME createTime, updateTime;
         char userLogicalId[128] = {0};
+        char username[51] = {0};  // v2.5.1新增（与数据库VARCHAR(50)保持一致）
 
-        unsigned long post_id_length, title_length, description_length, status_length, userLogicalIdLength;
-        bool description_is_null, userLogicalIdIsNull;
+        unsigned long post_id_length, title_length, description_length, status_length, userLogicalIdLength, usernameLength;
+        bool description_is_null, userLogicalIdIsNull, usernameIsNull;
 
         // 绑定结果（按照 SELECT 的顺序）
         int idx = 0;
@@ -392,6 +394,14 @@ std::optional<Post> PostRepository::findByPostId(const std::string& postId) {
         result[idx].is_null = &userLogicalIdIsNull;
         idx++;
 
+        // username（v2.5.1新增）
+        result[idx].buffer_type = MYSQL_TYPE_STRING;
+        result[idx].buffer = username;
+        result[idx].buffer_length = sizeof(username);
+        result[idx].length = &usernameLength;
+        result[idx].is_null = &usernameIsNull;
+        idx++;
+
         // 绑定结果
         if (mysql_stmt_bind_result(stmt.get(), result) != 0) {
             Logger::error("Failed to bind result: " + std::string(mysql_stmt_error(stmt.get())));
@@ -438,6 +448,11 @@ std::optional<Post> PostRepository::findByPostId(const std::string& postId) {
             // 设置用户逻辑ID（新增）
             if (!userLogicalIdIsNull && userLogicalIdLength > 0) {
                 post.setUserLogicalId(std::string(userLogicalId, userLogicalIdLength));
+            }
+
+            // 设置用户昵称（v2.5.1新增）
+            if (!usernameIsNull && usernameLength > 0) {
+                post.setUsername(std::string(username, usernameLength));
             }
 
             return post;
