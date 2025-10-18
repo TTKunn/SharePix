@@ -1313,3 +1313,82 @@ std::unordered_map<int, User> UserRepository::batchGetUsers(
     }
 }
 
+// 更新用户头像URL
+bool UserRepository::updateAvatarUrl(int userId, const std::string& avatarUrl) {
+    try {
+        Logger::info("更新用户头像URL: userId=" + std::to_string(userId));
+        
+        // 1. 使用ConnectionGuard自动管理连接
+        ConnectionGuard connGuard(DatabaseConnectionPool::getInstance());
+        if (!connGuard.isValid()) {
+            Logger::error("获取数据库连接失败");
+            return false;
+        }
+        
+        MYSQL* conn = connGuard.get();
+        
+        // 2. 准备SQL语句
+        const char* query = "UPDATE users SET avatar_url = ?, update_time = CURRENT_TIMESTAMP WHERE id = ?";
+        
+        // 3. 创建预编译语句
+        MYSQL_STMT* stmt = mysql_stmt_init(conn);
+        if (!stmt) {
+            Logger::error("mysql_stmt_init失败");
+            return false;
+        }
+        
+        // 4. 预编译SQL
+        if (mysql_stmt_prepare(stmt, query, strlen(query)) != 0) {
+            Logger::error("mysql_stmt_prepare失败: " + std::string(mysql_stmt_error(stmt)));
+            mysql_stmt_close(stmt);
+            return false;
+        }
+        
+        // 5. 绑定参数
+        MYSQL_BIND bind[2];
+        memset(bind, 0, sizeof(bind));
+        
+        // avatar_url (可为空)
+        bool avatar_is_null = avatarUrl.empty();
+        
+        bind[0].buffer_type = MYSQL_TYPE_STRING;
+        bind[0].buffer = (char*)avatarUrl.c_str();
+        bind[0].buffer_length = avatarUrl.length();
+        bind[0].is_null = &avatar_is_null;
+        
+        // userId
+        bind[1].buffer_type = MYSQL_TYPE_LONG;
+        bind[1].buffer = (char*)&userId;
+        bind[1].is_null = nullptr;
+        
+        if (mysql_stmt_bind_param(stmt, bind) != 0) {
+            Logger::error("mysql_stmt_bind_param失败: " + std::string(mysql_stmt_error(stmt)));
+            mysql_stmt_close(stmt);
+            return false;
+        }
+        
+        // 6. 执行更新
+        if (mysql_stmt_execute(stmt) != 0) {
+            Logger::error("mysql_stmt_execute失败: " + std::string(mysql_stmt_error(stmt)));
+            mysql_stmt_close(stmt);
+            return false;
+        }
+        
+        // 7. 检查影响行数
+        my_ulonglong affected = mysql_stmt_affected_rows(stmt);
+        mysql_stmt_close(stmt);
+        
+        if (affected == 0) {
+            Logger::warning("更新头像URL失败: 用户不存在, userId=" + std::to_string(userId));
+            return false;
+        }
+        
+        Logger::info("头像URL更新成功: userId=" + std::to_string(userId));
+        return true;
+        
+    } catch (const std::exception& e) {
+        Logger::error("updateAvatarUrl异常: " + std::string(e.what()));
+        return false;
+    }
+}
+

@@ -71,6 +71,11 @@ void AuthHandler::registerRoutes(httplib::Server& server) {
         handleCheckUsername(req, res);
     });
 
+    // 上传用户头像 (v2.6.0)
+    server.Post("/api/v1/users/avatar", [this](const httplib::Request& req, httplib::Response& res) {
+        handleUploadAvatar(req, res);
+    });
+
     Logger::info("Auth routes registered");
 }
 
@@ -494,5 +499,101 @@ void AuthHandler::handleCheckUsername(const httplib::Request& req, httplib::Resp
     Logger::info("用户名可用性检查完成: username=" + username +
                  ", valid=" + (result.valid ? "true" : "false") +
                  ", available=" + (result.available ? "true" : "false"));
+}
+
+// 处理头像上传请求
+void AuthHandler::handleUploadAvatar(const httplib::Request& req, httplib::Response& res) {
+    Logger::info("处理头像上传请求");
+    
+    // 1. 提取并验证JWT令牌
+    std::string authHeader = req.get_header_value("Authorization");
+    if (authHeader.empty() || authHeader.substr(0, 7) != "Bearer ") {
+        sendJsonResponse(res, 401, false, "未提供认证令牌");
+        return;
+    }
+    
+    std::string token = authHeader.substr(7);
+    
+    // 2. 验证令牌
+    TokenValidationResult validation = authService_->validateToken(token);
+    
+    if (!validation.valid) {
+        sendJsonResponse(res, 401, false, validation.message);
+        return;
+    }
+    
+    // 3. 检查是否有文件上传
+    if (!req.form.has_file("avatar")) {
+        sendJsonResponse(res, 400, false, "请上传头像文件");
+        Logger::warning("未提供头像文件");
+        return;
+    }
+    
+    // 4. 获取上传的文件
+    const auto& file = req.form.get_file("avatar");
+    
+    Logger::info("接收到头像文件: filename=" + file.filename + 
+                 ", content_type=" + file.content_type + 
+                 ", size=" + std::to_string(file.content.size()));
+    
+    // 5. 验证文件大小（5MB限制）
+    if (file.content.size() > 5 * 1024 * 1024) {
+        sendJsonResponse(res, 400, false, "文件大小超过限制（最大5MB）");
+        Logger::warning("文件过大: " + std::to_string(file.content.size()) + " bytes");
+        return;
+    }
+    
+    if (file.content.empty()) {
+        sendJsonResponse(res, 400, false, "文件为空");
+        Logger::warning("空文件");
+        return;
+    }
+    
+    // 6. 保存临时文件
+    std::string tempDir = "/tmp/";
+    std::string tempFilename = "avatar_" + std::to_string(validation.userId) + "_" + std::to_string(std::time(nullptr));
+    std::string tempFilePath = tempDir + tempFilename;
+    
+    FILE* tempFile = fopen(tempFilePath.c_str(), "wb");
+    if (!tempFile) {
+        sendJsonResponse(res, 500, false, "无法创建临时文件");
+        Logger::error("fopen失败: " + tempFilePath);
+        return;
+    }
+    
+    size_t written = fwrite(file.content.data(), 1, file.content.size(), tempFile);
+    fclose(tempFile);
+    
+    if (written != file.content.size()) {
+        sendJsonResponse(res, 500, false, "临时文件写入失败");
+        Logger::error("fwrite失败: written=" + std::to_string(written) + ", expected=" + std::to_string(file.content.size()));
+        unlink(tempFilePath.c_str());
+        return;
+    }
+    
+    Logger::info("临时文件已保存: " + tempFilePath);
+    
+    // 7. 调用Service层处理头像上传
+    UploadAvatarResult result = authService_->uploadAvatar(validation.userId, tempFilePath);
+    
+    // 8. 删除临时文件
+    unlink(tempFilePath.c_str());
+    Logger::info("临时文件已删除: " + tempFilePath);
+    
+    // 9. 返回结果
+    if (!result.success) {
+        sendJsonResponse(res, 400, false, result.message);
+        return;
+    }
+    
+    // 10. 构建响应数据
+    Json::Value data;
+    data["avatar_url"] = UrlHelper::toFullUrl(result.avatarUrl);  // 添加服务器URL前缀
+    data["width"] = result.width;
+    data["height"] = result.height;
+    data["file_size"] = static_cast<Json::Int64>(result.fileSize);
+    
+    sendJsonResponse(res, 200, true, result.message, data);
+    Logger::info("头像上传成功: userId=" + std::to_string(validation.userId) + ", avatarUrl=" + result.avatarUrl);
 }
 

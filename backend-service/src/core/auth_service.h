@@ -79,6 +79,20 @@ struct UsernameCheckResult {
     UsernameCheckResult() : valid(false), available(false), message("") {}
 };
 
+/**
+ * @brief 头像上传结果结构体
+ */
+struct UploadAvatarResult {
+    bool success;              // 上传是否成功
+    std::string message;       // 错误信息（如果失败）
+    std::string avatarUrl;     // 头像URL（相对路径）
+    int width;                 // 图片宽度（固定200）
+    int height;                // 图片高度（固定200）
+    long long fileSize;        // 文件大小（字节）
+    
+    UploadAvatarResult() : success(false), width(0), height(0), fileSize(0) {}
+};
+
 // ============================================================================
 // AuthService类定义
 // ============================================================================
@@ -222,6 +236,22 @@ public:
      * @return 用户公开信息，失败返回nullopt
      */
     std::optional<User> getUserPublicInfo(const std::string& userId);
+
+    /**
+     * @brief 上传用户头像（v2.6.0）
+     * 
+     * 处理流程：
+     * 1. 获取用户信息（获取userId逻辑ID）
+     * 2. 调用AvatarProcessor处理图片
+     * 3. 删除旧头像文件
+     * 4. 更新数据库中的avatar_url字段
+     * 5. 返回结果（包含新头像URL）
+     * 
+     * @param userId 用户物理ID
+     * @param tempFilePath 临时文件路径
+     * @return UploadAvatarResult 上传结果
+     */
+    UploadAvatarResult uploadAvatar(int userId, const std::string& tempFilePath);
 
 private:
     std::unique_ptr<UserRepository> userRepo_;

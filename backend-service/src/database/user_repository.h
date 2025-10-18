@@ -140,6 +140,17 @@ public:
                           const std::string& location);
 
     /**
+     * @brief 更新用户头像URL（轻量级更新方法）
+     * 
+     * 专用于头像上传场景，仅更新avatar_url字段
+     * 
+     * @param userId 用户物理ID
+     * @param avatarUrl 新的头像URL（相对路径，例：/uploads/avatars/USR_xxx_1234567890.jpg）
+     * @return true 更新成功，false 更新失败
+     */
+    bool updateAvatarUrl(int userId, const std::string& avatarUrl);
+
+    /**
      * @brief 检查邮箱是否被其他用户使用
      *
      * @param email 邮箱

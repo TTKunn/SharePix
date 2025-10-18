@@ -117,6 +117,13 @@ private:
     void handleCheckUsername(const httplib::Request& req, httplib::Response& res);
 
     /**
+     * @brief 处理头像上传请求
+     *
+     * POST /api/v1/users/avatar
+     */
+    void handleUploadAvatar(const httplib::Request& req, httplib::Response& res);
+
+    /**
      * @brief 解析JSON请求体
      * 
      * @param body 请求体字符串

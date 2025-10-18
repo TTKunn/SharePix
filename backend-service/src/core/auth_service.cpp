@@ -10,6 +10,7 @@
 #include "security/jwt_manager.h"
 #include "security/password_hasher.h"
 #include "utils/logger.h"
+#include "utils/avatar_processor.h"
 #include <regex>
 #include <random>
 #include <sstream>
@@ -659,4 +660,73 @@ bool AuthService::validateEmail(const std::string& email) {
     // 标准邮箱格式
     std::regex emailRegex("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
     return std::regex_match(email, emailRegex);
+}
+
+// 上传用户头像
+UploadAvatarResult AuthService::uploadAvatar(int userId, const std::string& tempFilePath) {
+    UploadAvatarResult result;
+    
+    try {
+        Logger::info("开始上传头像: userId=" + std::to_string(userId) + ", tempFilePath=" + tempFilePath);
+        
+        // 1. 获取用户信息（获取user_id逻辑ID）
+        auto existingUser = userRepo_->findById(userId);
+        if (!existingUser.has_value()) {
+            result.message = "用户不存在";
+            Logger::error(result.message + ", userId=" + std::to_string(userId));
+            return result;
+        }
+        
+        std::string userIdStr = existingUser->getUserId();
+        
+        // 2. 调用AvatarProcessor处理图片
+        std::string avatarDir = "uploads/avatars/";
+        auto processResult = AvatarProcessor::processAvatar(tempFilePath, userIdStr, avatarDir);
+        
+        if (!processResult.success) {
+            result.message = processResult.message;
+            Logger::error("头像处理失败: " + result.message);
+            return result;
+        }
+        
+        Logger::info("头像处理成功: " + processResult.avatarPath);
+        
+        // 3. 获取旧头像URL，删除旧文件
+        std::string oldAvatarUrl = existingUser->getAvatarUrl();
+        if (!oldAvatarUrl.empty()) {
+            AvatarProcessor::deleteOldAvatar(oldAvatarUrl);
+        }
+        
+        // 4. 更新数据库中的avatar_url字段
+        bool updateSuccess = userRepo_->updateAvatarUrl(userId, processResult.avatarPath);
+        
+        if (!updateSuccess) {
+            result.message = "更新数据库失败";
+            Logger::error(result.message);
+            
+            // 回滚：删除新上传的头像文件
+            AvatarProcessor::deleteOldAvatar(processResult.avatarPath);
+            
+            return result;
+        }
+        
+        Logger::info("数据库更新成功: userId=" + std::to_string(userId));
+        
+        // 5. 填充结果
+        result.success = true;
+        result.message = "头像上传成功";
+        result.avatarUrl = processResult.avatarPath;
+        result.width = processResult.width;
+        result.height = processResult.height;
+        result.fileSize = processResult.fileSize;
+        
+        Logger::info("头像上传完成: userId=" + std::to_string(userId) + ", avatarUrl=" + result.avatarUrl);
+        
+        return result;
+        
+    } catch (const std::exception& e) {
+        result.message = "头像上传异常: " + std::string(e.what());
+        Logger::error(result.message);
+        return result;
+    }
 }
