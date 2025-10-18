@@ -36,10 +36,10 @@ void Post::clearImages() {
 // 将帖子对象转换为JSON
 Json::Value Post::toJson(bool includeImages) const {
     Json::Value json;
-    
+
     json["id"] = id_;
     json["post_id"] = postId_;
-    json["user_id"] = userId_;
+    json["user_id"] = userLogicalId_;  // 返回逻辑ID（前端使用）
     json["title"] = title_;
     json["description"] = description_;
     json["image_count"] = imageCount_;
@@ -80,8 +80,14 @@ Post Post::fromJson(const Json::Value& j) {
         post.postId_ = j["post_id"].asString();
     }
     
-    if (j.isMember("user_id") && j["user_id"].isInt()) {
-        post.userId_ = j["user_id"].asInt();
+    if (j.isMember("user_id")) {
+        if (j["user_id"].isInt()) {
+            // 兼容旧格式（物理ID）
+            post.userId_ = j["user_id"].asInt();
+        } else if (j["user_id"].isString()) {
+            // 新格式（逻辑ID）
+            post.userLogicalId_ = j["user_id"].asString();
+        }
     }
     
     if (j.isMember("title") && j["title"].isString()) {

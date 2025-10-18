@@ -273,7 +273,13 @@ std::optional<Image> ImageRepository::findByImageId(const std::string& imageId) 
             return std::nullopt;
         }
 
-        const char* query = "SELECT * FROM images WHERE image_id = ?";
+        const char* query = "SELECT i.id, i.image_id, i.post_id, i.display_order, i.user_id, "
+                            "i.file_url, i.thumbnail_url, i.file_size, i.width, i.height, "
+                            "i.mime_type, i.create_time, i.update_time, "
+                            "COALESCE(u.user_id, '') AS user_logical_id "
+                            "FROM images i "
+                            "LEFT JOIN users u ON i.user_id = u.id "
+                            "WHERE i.image_id = ?";
 
         if (mysql_stmt_prepare(stmt.get(), query, strlen(query)) != 0) {
             Logger::error("Failed to prepare statement: " + std::string(mysql_stmt_error(stmt.get())));
@@ -299,6 +305,26 @@ std::optional<Image> ImageRepository::findByImageId(const std::string& imageId) 
         }
 
         Image image = buildImageFromStatement(stmt.get());
+
+        // 获取user_logical_id字段
+        MYSQL_BIND logicalIdBind[1];
+        memset(logicalIdBind, 0, sizeof(logicalIdBind));
+        char userLogicalId[128] = {0};
+        unsigned long userLogicalIdLength;
+        bool userLogicalIdIsNull;
+
+        logicalIdBind[0].buffer_type = MYSQL_TYPE_STRING;
+        logicalIdBind[0].buffer = userLogicalId;
+        logicalIdBind[0].buffer_length = sizeof(userLogicalId);
+        logicalIdBind[0].length = &userLogicalIdLength;
+        logicalIdBind[0].is_null = &userLogicalIdIsNull;
+
+        if (mysql_stmt_bind_result(stmt.get(), logicalIdBind) == 0 &&
+            mysql_stmt_fetch_column(stmt.get(), logicalIdBind, 13, 0) == 0) {
+            if (!userLogicalIdIsNull && userLogicalIdLength > 0) {
+                image.setUserLogicalId(std::string(userLogicalId, userLogicalIdLength));
+            }
+        }
 
         if (image.getId() > 0) {
             return image;
@@ -430,7 +456,14 @@ std::vector<Image> ImageRepository::findByPostId(int postId) {
             return images;
         }
 
-        const char* query = "SELECT * FROM images WHERE post_id = ? ORDER BY display_order";
+        const char* query = "SELECT i.id, i.image_id, i.post_id, i.display_order, i.user_id, "
+                            "i.file_url, i.thumbnail_url, i.file_size, i.width, i.height, "
+                            "i.mime_type, i.create_time, i.update_time, "
+                            "COALESCE(u.user_id, '') AS user_logical_id "
+                            "FROM images i "
+                            "LEFT JOIN users u ON i.user_id = u.id "
+                            "WHERE i.post_id = ? "
+                            "ORDER BY i.display_order";
 
         if (mysql_stmt_prepare(stmt.get(), query, strlen(query)) != 0) {
             Logger::error("Failed to prepare statement: " + std::string(mysql_stmt_error(stmt.get())));
@@ -454,8 +487,8 @@ std::vector<Image> ImageRepository::findByPostId(int postId) {
             return images;
         }
 
-        // 准备结果绑定（13个字段：id, image_id, post_id, display_order, user_id, file_url, thumbnail_url, file_size, width, height, mime_type, create_time, update_time）
-        MYSQL_BIND result[13];
+        // 准备结果绑定（14个字段：id, image_id, post_id, display_order, user_id, file_url, thumbnail_url, file_size, width, height, mime_type, create_time, update_time, user_logical_id）
+        MYSQL_BIND result[14];
         memset(result, 0, sizeof(result));
 
         // 定义变量存储结果
@@ -470,8 +503,10 @@ std::vector<Image> ImageRepository::findByPostId(int postId) {
         int width, height;
         char mimeType[51] = {0};
         MYSQL_TIME createTime, updateTime;
+        char userLogicalId[128] = {0};
 
-        unsigned long imageId_length, fileUrl_length, thumbnailUrl_length, mimeType_length;
+        unsigned long imageId_length, fileUrl_length, thumbnailUrl_length, mimeType_length, userLogicalIdLength;
+        bool userLogicalIdIsNull;
 
         // 绑定结果（按照 SELECT * 的顺序）
         int idx = 0;
@@ -549,6 +584,14 @@ std::vector<Image> ImageRepository::findByPostId(int postId) {
         result[idx].buffer = &updateTime;
         idx++;
 
+        // user_logical_id (新增字段)
+        result[idx].buffer_type = MYSQL_TYPE_STRING;
+        result[idx].buffer = userLogicalId;
+        result[idx].buffer_length = sizeof(userLogicalId);
+        result[idx].length = &userLogicalIdLength;
+        result[idx].is_null = &userLogicalIdIsNull;
+        idx++;
+
         // 绑定结果
         if (mysql_stmt_bind_result(stmt.get(), result) != 0) {
             Logger::error("Failed to bind result: " + std::string(mysql_stmt_error(stmt.get())));
@@ -592,6 +635,11 @@ std::vector<Image> ImageRepository::findByPostId(int postId) {
             tm_update.tm_sec = updateTime.second;
             image.setUpdateTime(mktime(&tm_update));
 
+            // 设置用户逻辑ID
+            if (!userLogicalIdIsNull && userLogicalIdLength > 0) {
+                image.setUserLogicalId(std::string(userLogicalId, userLogicalIdLength));
+            }
+
             images.push_back(image);
         }
 
@@ -619,12 +667,18 @@ std::vector<Image> ImageRepository::findByPostIds(const std::vector<int>& postId
 
         // 构建IN子句
         std::ostringstream queryStream;
-        queryStream << "SELECT * FROM images WHERE post_id IN (";
+        queryStream << "SELECT i.id, i.image_id, i.post_id, i.display_order, i.user_id, "
+                    << "i.file_url, i.thumbnail_url, i.file_size, i.width, i.height, "
+                    << "i.mime_type, i.create_time, i.update_time, "
+                    << "COALESCE(u.user_id, '') AS user_logical_id "
+                    << "FROM images i "
+                    << "LEFT JOIN users u ON i.user_id = u.id "
+                    << "WHERE i.post_id IN (";
         for (size_t i = 0; i < postIds.size(); ++i) {
             if (i > 0) queryStream << ",";
             queryStream << "?";
         }
-        queryStream << ") ORDER BY post_id, display_order";
+        queryStream << ") ORDER BY i.post_id, i.display_order";
 
         std::string queryStr = queryStream.str();
         const char* query = queryStr.c_str();
@@ -661,8 +715,8 @@ std::vector<Image> ImageRepository::findByPostIds(const std::vector<int>& postId
             return images;
         }
 
-        // 准备结果绑定（13个字段：id, image_id, post_id, display_order, user_id, file_url, thumbnail_url, file_size, width, height, mime_type, create_time, update_time）
-        MYSQL_BIND result[13];
+        // 准备结果绑定（14个字段：id, image_id, post_id, display_order, user_id, file_url, thumbnail_url, file_size, width, height, mime_type, create_time, update_time, user_logical_id）
+        MYSQL_BIND result[14];
         memset(result, 0, sizeof(result));
 
         // 定义变量存储结果
@@ -677,8 +731,10 @@ std::vector<Image> ImageRepository::findByPostIds(const std::vector<int>& postId
         int width, height;
         char mimeType[51] = {0};
         MYSQL_TIME createTime, updateTime;
+        char userLogicalId[128] = {0};
 
-        unsigned long imageId_length, fileUrl_length, thumbnailUrl_length, mimeType_length;
+        unsigned long imageId_length, fileUrl_length, thumbnailUrl_length, mimeType_length, userLogicalIdLength;
+        bool userLogicalIdIsNull;
 
         // 绑定结果（按照 SELECT * 的顺序）
         int idx = 0;
@@ -756,6 +812,14 @@ std::vector<Image> ImageRepository::findByPostIds(const std::vector<int>& postId
         result[idx].buffer = &updateTime;
         idx++;
 
+        // user_logical_id (新增字段)
+        result[idx].buffer_type = MYSQL_TYPE_STRING;
+        result[idx].buffer = userLogicalId;
+        result[idx].buffer_length = sizeof(userLogicalId);
+        result[idx].length = &userLogicalIdLength;
+        result[idx].is_null = &userLogicalIdIsNull;
+        idx++;
+
         // 绑定结果
         if (mysql_stmt_bind_result(stmt.get(), result) != 0) {
             Logger::error("Failed to bind result: " + std::string(mysql_stmt_error(stmt.get())));
@@ -798,6 +862,11 @@ std::vector<Image> ImageRepository::findByPostIds(const std::vector<int>& postId
             tm_update.tm_min = updateTime.minute;
             tm_update.tm_sec = updateTime.second;
             image.setUpdateTime(mktime(&tm_update));
+
+            // 设置用户逻辑ID
+            if (!userLogicalIdIsNull && userLogicalIdLength > 0) {
+                image.setUserLogicalId(std::string(userLogicalId, userLogicalIdLength));
+            }
 
             images.push_back(image);
         }

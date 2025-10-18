@@ -29,7 +29,7 @@ Json::Value Image::toJson() const {
     json["image_id"] = imageId_;
     json["post_id"] = postId_;
     json["display_order"] = displayOrder_;
-    json["user_id"] = userId_;
+    json["user_id"] = userLogicalId_;  // 返回逻辑ID（前端使用）
     
     // 使用UrlHelper为图片路径添加服务器URL前缀
     json["file_url"] = UrlHelper::toFullUrl(fileUrl_);
@@ -65,8 +65,14 @@ Image Image::fromJson(const Json::Value& j) {
         image.displayOrder_ = j["display_order"].asInt();
     }
 
-    if (j.isMember("user_id") && j["user_id"].isInt()) {
-        image.userId_ = j["user_id"].asInt();
+    if (j.isMember("user_id")) {
+        if (j["user_id"].isInt()) {
+            // 兼容旧格式（物理ID）
+            image.userId_ = j["user_id"].asInt();
+        } else if (j["user_id"].isString()) {
+            // 新格式（逻辑ID）
+            image.userLogicalId_ = j["user_id"].asString();
+        }
     }
 
     if (j.isMember("file_url") && j["file_url"].isString()) {

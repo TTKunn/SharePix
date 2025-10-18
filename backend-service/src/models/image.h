@@ -44,6 +44,7 @@ public:
     int getPostId() const { return postId_; }
     int getDisplayOrder() const { return displayOrder_; }
     int getUserId() const { return userId_; }
+    const std::string& getUserLogicalId() const { return userLogicalId_; }
     const std::string& getFileUrl() const { return fileUrl_; }
     const std::string& getThumbnailUrl() const { return thumbnailUrl_; }
     long long getFileSize() const { return fileSize_; }
@@ -59,6 +60,7 @@ public:
     void setPostId(int postId) { postId_ = postId; }
     void setDisplayOrder(int displayOrder) { displayOrder_ = displayOrder; }
     void setUserId(int userId) { userId_ = userId; }
+    void setUserLogicalId(const std::string& userLogicalId) { userLogicalId_ = userLogicalId; }
     void setFileUrl(const std::string& fileUrl) { fileUrl_ = fileUrl; }
     void setThumbnailUrl(const std::string& thumbnailUrl) { thumbnailUrl_ = thumbnailUrl; }
     void setFileSize(long long fileSize) { fileSize_ = fileSize; }
@@ -92,7 +94,8 @@ private:
     std::string imageId_;         // 业务逻辑ID（例：IMG_2025Q4_ABC123）
     int postId_;                  // 所属帖子ID
     int displayOrder_;            // 显示顺序（0-8）
-    int userId_;                  // 上传用户ID
+    int userId_;                  // 上传用户物理ID（内部使用）
+    std::string userLogicalId_;   // 上传用户逻辑ID（返回前端）
     std::string fileUrl_;         // 原图URL
     std::string thumbnailUrl_;    // 缩略图URL
     long long fileSize_;          // 文件大小（字节）

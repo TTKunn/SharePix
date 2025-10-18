@@ -260,7 +260,16 @@ std::optional<Post> PostRepository::findByPostId(const std::string& postId) {
             return std::nullopt;
         }
 
-        const char* query = "SELECT * FROM posts WHERE post_id = ?";
+        // 修改SQL查询，添加LEFT JOIN获取用户逻辑ID
+        const char* query =
+            "SELECT "
+            "  p.id, p.post_id, p.user_id, p.title, p.description, "
+            "  p.image_count, p.like_count, p.favorite_count, p.view_count, "
+            "  p.status, p.create_time, p.update_time, "
+            "  COALESCE(u.user_id, '') AS user_logical_id "
+            "FROM posts p "
+            "LEFT JOIN users u ON p.user_id = u.id "
+            "WHERE p.post_id = ?";
 
         if (mysql_stmt_prepare(stmt.get(), query, strlen(query)) != 0) {
             Logger::error("Failed to prepare statement: " + std::string(mysql_stmt_error(stmt.get())));
@@ -285,9 +294,152 @@ std::optional<Post> PostRepository::findByPostId(const std::string& postId) {
             return std::nullopt;
         }
 
-        Post post = buildPostFromStatement(stmt.get());
+        // 准备结果绑定（13个字段：原12个 + user_logical_id）
+        MYSQL_BIND result[13];
+        memset(result, 0, sizeof(result));
 
-        if (post.getId() > 0) {
+        // 定义变量存储结果
+        long long id;
+        char post_id[37] = {0};
+        long long userId;
+        char title[256] = {0};
+        char description[1024] = {0};
+        int imageCount, likeCount, favoriteCount, viewCount;
+        char status[20] = {0};
+        MYSQL_TIME createTime, updateTime;
+        char userLogicalId[128] = {0};
+
+        unsigned long post_id_length, title_length, description_length, status_length, userLogicalIdLength;
+        bool description_is_null, userLogicalIdIsNull;
+
+        // 绑定结果（按照 SELECT 的顺序）
+        int idx = 0;
+
+        // id
+        result[idx].buffer_type = MYSQL_TYPE_LONGLONG;
+        result[idx].buffer = &id;
+        idx++;
+
+        // post_id
+        result[idx].buffer_type = MYSQL_TYPE_STRING;
+        result[idx].buffer = post_id;
+        result[idx].buffer_length = sizeof(post_id);
+        result[idx].length = &post_id_length;
+        idx++;
+
+        // user_id
+        result[idx].buffer_type = MYSQL_TYPE_LONGLONG;
+        result[idx].buffer = &userId;
+        idx++;
+
+        // title
+        result[idx].buffer_type = MYSQL_TYPE_STRING;
+        result[idx].buffer = title;
+        result[idx].buffer_length = sizeof(title);
+        result[idx].length = &title_length;
+        idx++;
+
+        // description
+        result[idx].buffer_type = MYSQL_TYPE_STRING;
+        result[idx].buffer = description;
+        result[idx].buffer_length = sizeof(description);
+        result[idx].length = &description_length;
+        result[idx].is_null = &description_is_null;
+        idx++;
+
+        // image_count
+        result[idx].buffer_type = MYSQL_TYPE_LONG;
+        result[idx].buffer = &imageCount;
+        idx++;
+
+        // like_count
+        result[idx].buffer_type = MYSQL_TYPE_LONG;
+        result[idx].buffer = &likeCount;
+        idx++;
+
+        // favorite_count
+        result[idx].buffer_type = MYSQL_TYPE_LONG;
+        result[idx].buffer = &favoriteCount;
+        idx++;
+
+        // view_count
+        result[idx].buffer_type = MYSQL_TYPE_LONG;
+        result[idx].buffer = &viewCount;
+        idx++;
+
+        // status
+        result[idx].buffer_type = MYSQL_TYPE_STRING;
+        result[idx].buffer = status;
+        result[idx].buffer_length = sizeof(status);
+        result[idx].length = &status_length;
+        idx++;
+
+        // create_time
+        result[idx].buffer_type = MYSQL_TYPE_TIMESTAMP;
+        result[idx].buffer = &createTime;
+        idx++;
+
+        // update_time
+        result[idx].buffer_type = MYSQL_TYPE_TIMESTAMP;
+        result[idx].buffer = &updateTime;
+        idx++;
+
+        // user_logical_id（新增）
+        result[idx].buffer_type = MYSQL_TYPE_STRING;
+        result[idx].buffer = userLogicalId;
+        result[idx].buffer_length = sizeof(userLogicalId);
+        result[idx].length = &userLogicalIdLength;
+        result[idx].is_null = &userLogicalIdIsNull;
+        idx++;
+
+        // 绑定结果
+        if (mysql_stmt_bind_result(stmt.get(), result) != 0) {
+            Logger::error("Failed to bind result: " + std::string(mysql_stmt_error(stmt.get())));
+            return std::nullopt;
+        }
+
+        // 获取数据
+        if (mysql_stmt_fetch(stmt.get()) == 0) {
+            Post post;
+            post.setId(static_cast<int>(id));
+            post.setPostId(std::string(post_id, post_id_length));
+            post.setUserId(static_cast<int>(userId));
+            post.setTitle(std::string(title, title_length));
+
+            if (!description_is_null) {
+                post.setDescription(std::string(description, description_length));
+            }
+
+            post.setImageCount(imageCount);
+            post.setLikeCount(likeCount);
+            post.setFavoriteCount(favoriteCount);
+            post.setViewCount(viewCount);
+            post.setStatus(Post::stringToStatus(std::string(status, status_length)));
+
+            // 转换时间
+            struct tm tm_create = {0};
+            tm_create.tm_year = createTime.year - 1900;
+            tm_create.tm_mon = createTime.month - 1;
+            tm_create.tm_mday = createTime.day;
+            tm_create.tm_hour = createTime.hour;
+            tm_create.tm_min = createTime.minute;
+            tm_create.tm_sec = createTime.second;
+            post.setCreateTime(mktime(&tm_create));
+
+            struct tm tm_update = {0};
+            tm_update.tm_year = updateTime.year - 1900;
+            tm_update.tm_mon = updateTime.month - 1;
+            tm_update.tm_mday = updateTime.day;
+            tm_update.tm_hour = updateTime.hour;
+            tm_update.tm_min = updateTime.minute;
+            tm_update.tm_sec = updateTime.second;
+            post.setUpdateTime(mktime(&tm_update));
+
+            // 设置用户逻辑ID（新增）
+            if (!userLogicalIdIsNull && userLogicalIdLength > 0) {
+                post.setUserLogicalId(std::string(userLogicalId, userLogicalIdLength));
+            }
+
             return post;
         }
 
@@ -453,7 +605,18 @@ std::vector<Post> PostRepository::getRecentPosts(int page, int pageSize) {
             return posts;
         }
 
-        const char* query = "SELECT * FROM posts WHERE status = 'APPROVED' ORDER BY create_time DESC LIMIT ? OFFSET ?";
+        // 修改SQL查询，添加LEFT JOIN获取用户逻辑ID
+        const char* query =
+            "SELECT "
+            "  p.id, p.post_id, p.user_id, p.title, p.description, "
+            "  p.image_count, p.like_count, p.favorite_count, p.view_count, "
+            "  p.status, p.create_time, p.update_time, "
+            "  COALESCE(u.user_id, '') AS user_logical_id "
+            "FROM posts p "
+            "LEFT JOIN users u ON p.user_id = u.id "
+            "WHERE p.status = 'APPROVED' "
+            "ORDER BY p.create_time DESC "
+            "LIMIT ? OFFSET ?";
 
         if (mysql_stmt_prepare(stmt.get(), query, strlen(query)) != 0) {
             Logger::error("Failed to prepare statement: " + std::string(mysql_stmt_error(stmt.get())));
@@ -483,8 +646,8 @@ std::vector<Post> PostRepository::getRecentPosts(int page, int pageSize) {
             return posts;
         }
 
-        // 准备结果绑定（12个字段：id, post_id, user_id, title, description, image_count, like_count, favorite_count, view_count, status, create_time, update_time）
-        MYSQL_BIND result[12];
+        // 准备结果绑定（13个字段：原12个 + user_logical_id）
+        MYSQL_BIND result[13];
         memset(result, 0, sizeof(result));
 
         // 定义变量存储结果
@@ -496,11 +659,12 @@ std::vector<Post> PostRepository::getRecentPosts(int page, int pageSize) {
         int imageCount, likeCount, favoriteCount, viewCount;
         char status[20] = {0};
         MYSQL_TIME createTime, updateTime;
+        char userLogicalId[128] = {0};
 
-        unsigned long postId_length, title_length, description_length, status_length;
-        bool description_is_null;
+        unsigned long postId_length, title_length, description_length, status_length, userLogicalIdLength;
+        bool description_is_null, userLogicalIdIsNull;
 
-        // 绑定结果（按照 SELECT * 的顺序）
+        // 绑定结果（按照 SELECT 的顺序）
         int idx = 0;
 
         // id
@@ -572,6 +736,14 @@ std::vector<Post> PostRepository::getRecentPosts(int page, int pageSize) {
         result[idx].buffer = &updateTime;
         idx++;
 
+        // user_logical_id（新增）
+        result[idx].buffer_type = MYSQL_TYPE_STRING;
+        result[idx].buffer = userLogicalId;
+        result[idx].buffer_length = sizeof(userLogicalId);
+        result[idx].length = &userLogicalIdLength;
+        result[idx].is_null = &userLogicalIdIsNull;
+        idx++;
+
         // 绑定结果
         if (mysql_stmt_bind_result(stmt.get(), result) != 0) {
             Logger::error("Failed to bind result: " + std::string(mysql_stmt_error(stmt.get())));
@@ -617,6 +789,11 @@ std::vector<Post> PostRepository::getRecentPosts(int page, int pageSize) {
             tm_update.tm_min = updateTime.minute;
             tm_update.tm_sec = updateTime.second;
             post.setUpdateTime(mktime(&tm_update));
+
+            // 设置用户逻辑ID（新增）
+            if (!userLogicalIdIsNull && userLogicalIdLength > 0) {
+                post.setUserLogicalId(std::string(userLogicalId, userLogicalIdLength));
+            }
 
             posts.push_back(post);
         }
@@ -690,12 +867,13 @@ std::vector<Post> PostRepository::getRecentPostsWithImagesOptimized(int page, in
             return posts;
         }
 
-        // 使用子查询 + LEFT JOIN 确保LIMIT正确应用于帖子数量
-        const char* query = 
+        // 使用子查询 + LEFT JOIN 确保LIMIT正确应用于帖子数量，同时JOIN users获取逻辑ID
+        const char* query =
             "SELECT "
             "  p.id, p.post_id, p.user_id, p.title, p.description, "
             "  p.image_count, p.like_count, p.favorite_count, p.view_count, "
             "  p.status, p.create_time, p.update_time, "
+            "  COALESCE(u.user_id, '') AS user_logical_id, "
             "  i.image_id, i.file_url, i.thumbnail_url, i.display_order, "
             "  i.width, i.height, i.mime_type, i.file_size, i.create_time as img_create_time "
             "FROM ( "
@@ -704,6 +882,7 @@ std::vector<Post> PostRepository::getRecentPostsWithImagesOptimized(int page, in
             "  ORDER BY create_time DESC "
             "  LIMIT ? OFFSET ? "
             ") p "
+            "LEFT JOIN users u ON p.user_id = u.id "
             "LEFT JOIN images i ON p.id = i.post_id "
             "ORDER BY p.create_time DESC, i.display_order ASC";
 
@@ -759,7 +938,10 @@ std::vector<Post> PostRepository::getRecentPostsWithImagesOptimized(int page, in
         unsigned long status_length;
         MYSQL_TIME createTime;
         MYSQL_TIME updateTime;
-        
+        char userLogicalId[128];
+        unsigned long userLogicalIdLength;
+        bool userLogicalIdIsNull;
+
         // 图片字段
         char imageId[256];
         unsigned long imageId_length;
@@ -784,8 +966,8 @@ std::vector<Post> PostRepository::getRecentPostsWithImagesOptimized(int page, in
         MYSQL_TIME imgCreateTime;
         bool imgCreateTime_is_null;
 
-        // 绑定结果
-        MYSQL_BIND result[23];
+        // 绑定结果（24个字段：原23个 + user_logical_id）
+        MYSQL_BIND result[24];
         memset(result, 0, sizeof(result));
         
         int idx = 0;
@@ -845,6 +1027,14 @@ std::vector<Post> PostRepository::getRecentPostsWithImagesOptimized(int page, in
 
         result[idx].buffer_type = MYSQL_TYPE_TIMESTAMP;
         result[idx].buffer = &updateTime;
+        idx++;
+
+        // user_logical_id（新增）
+        result[idx].buffer_type = MYSQL_TYPE_STRING;
+        result[idx].buffer = userLogicalId;
+        result[idx].buffer_length = sizeof(userLogicalId);
+        result[idx].length = &userLogicalIdLength;
+        result[idx].is_null = &userLogicalIdIsNull;
         idx++;
 
         // Image字段
@@ -952,6 +1142,11 @@ std::vector<Post> PostRepository::getRecentPostsWithImagesOptimized(int page, in
                 tm_update.tm_sec = updateTime.second;
                 post.setUpdateTime(mktime(&tm_update));
 
+                // 设置用户逻辑ID（新增）
+                if (!userLogicalIdIsNull && userLogicalIdLength > 0) {
+                    post.setUserLogicalId(std::string(userLogicalId, userLogicalIdLength));
+                }
+
                 postMap[postPhysicalId] = post;
             }
 
@@ -1038,7 +1233,18 @@ std::vector<Post> PostRepository::findByUserId(int userId, int page, int pageSiz
             return posts;
         }
 
-        const char* query = "SELECT * FROM posts WHERE user_id = ? ORDER BY create_time DESC LIMIT ? OFFSET ?";
+        // 修改SQL查询，添加LEFT JOIN获取用户逻辑ID
+        const char* query =
+            "SELECT "
+            "  p.id, p.post_id, p.user_id, p.title, p.description, "
+            "  p.image_count, p.like_count, p.favorite_count, p.view_count, "
+            "  p.status, p.create_time, p.update_time, "
+            "  COALESCE(u.user_id, '') AS user_logical_id "
+            "FROM posts p "
+            "LEFT JOIN users u ON p.user_id = u.id "
+            "WHERE p.user_id = ? "
+            "ORDER BY p.create_time DESC "
+            "LIMIT ? OFFSET ?";
 
         if (mysql_stmt_prepare(stmt.get(), query, strlen(query)) != 0) {
             Logger::error("Failed to prepare statement: " + std::string(mysql_stmt_error(stmt.get())));
@@ -1071,8 +1277,8 @@ std::vector<Post> PostRepository::findByUserId(int userId, int page, int pageSiz
             return posts;
         }
 
-        // 准备结果绑定（12个字段：id, post_id, user_id, title, description, image_count, like_count, favorite_count, view_count, status, create_time, update_time）
-        MYSQL_BIND result[12];
+        // 准备结果绑定（13个字段：原12个 + user_logical_id）
+        MYSQL_BIND result[13];
         memset(result, 0, sizeof(result));
 
         // 定义变量存储结果
@@ -1084,11 +1290,12 @@ std::vector<Post> PostRepository::findByUserId(int userId, int page, int pageSiz
         int imageCount, likeCount, favoriteCount, viewCount;
         char status[20] = {0};
         MYSQL_TIME createTime, updateTime;
+        char userLogicalId[128] = {0};
 
-        unsigned long postId_length, title_length, description_length, status_length;
-        bool description_is_null;
+        unsigned long postId_length, title_length, description_length, status_length, userLogicalIdLength;
+        bool description_is_null, userLogicalIdIsNull;
 
-        // 绑定结果（按照 SELECT * 的顺序）
+        // 绑定结果（按照 SELECT 的顺序）
         int idx = 0;
 
         // id
@@ -1160,6 +1367,14 @@ std::vector<Post> PostRepository::findByUserId(int userId, int page, int pageSiz
         result[idx].buffer = &updateTime;
         idx++;
 
+        // user_logical_id（新增）
+        result[idx].buffer_type = MYSQL_TYPE_STRING;
+        result[idx].buffer = userLogicalId;
+        result[idx].buffer_length = sizeof(userLogicalId);
+        result[idx].length = &userLogicalIdLength;
+        result[idx].is_null = &userLogicalIdIsNull;
+        idx++;
+
         // 绑定结果
         if (mysql_stmt_bind_result(stmt.get(), result) != 0) {
             Logger::error("Failed to bind result: " + std::string(mysql_stmt_error(stmt.get())));
@@ -1205,6 +1420,11 @@ std::vector<Post> PostRepository::findByUserId(int userId, int page, int pageSiz
             tm_update.tm_min = updateTime.minute;
             tm_update.tm_sec = updateTime.second;
             post.setUpdateTime(mktime(&tm_update));
+
+            // 设置用户逻辑ID（新增）
+            if (!userLogicalIdIsNull && userLogicalIdLength > 0) {
+                post.setUserLogicalId(std::string(userLogicalId, userLogicalIdLength));
+            }
 
             posts.push_back(post);
         }

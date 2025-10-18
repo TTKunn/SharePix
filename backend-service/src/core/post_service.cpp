@@ -201,7 +201,10 @@ PostCreateResult PostService::createPost(
             return result;
         }
 
-        // 12. 返回成功结果
+        // 12. Repository的findByPostIdWithImages已通过LEFT JOIN获取userLogicalId
+        //     无需额外处理，直接返回结果
+
+        // 13. 返回成功结果
         result.success = true;
         result.message = "帖子创建成功";
         result.post = *postWithImages;

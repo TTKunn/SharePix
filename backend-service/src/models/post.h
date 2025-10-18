@@ -52,6 +52,7 @@ public:
     int getId() const { return id_; }
     const std::string& getPostId() const { return postId_; }
     int getUserId() const { return userId_; }
+    const std::string& getUserLogicalId() const { return userLogicalId_; }
     const std::string& getTitle() const { return title_; }
     const std::string& getDescription() const { return description_; }
     int getImageCount() const { return imageCount_; }
@@ -67,6 +68,7 @@ public:
     void setId(int id) { id_ = id; }
     void setPostId(const std::string& postId) { postId_ = postId; }
     void setUserId(int userId) { userId_ = userId; }
+    void setUserLogicalId(const std::string& userLogicalId) { userLogicalId_ = userLogicalId; }
     void setTitle(const std::string& title) { title_ = title; }
     void setDescription(const std::string& description) { description_ = description; }
     void setImageCount(int imageCount) { imageCount_ = imageCount; }
@@ -138,7 +140,8 @@ public:
 private:
     int id_;                      // 物理ID（自增主键）
     std::string postId_;          // 业务逻辑ID（例：POST_2025Q4_ABC123）
-    int userId_;                  // 发布用户ID
+    int userId_;                  // 发布用户物理ID（内部使用）
+    std::string userLogicalId_;   // 发布用户逻辑ID（返回前端）
     std::string title_;           // 帖子标题
     std::string description_;     // 帖子配文
     int imageCount_;              // 图片数量
