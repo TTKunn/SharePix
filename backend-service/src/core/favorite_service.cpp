@@ -310,3 +310,49 @@ FavoriteListResult FavoriteService::getUserFavorites(int userId, int page, int p
         return result;
     }
 }
+
+// 批量检查用户对多个帖子的收藏状态
+std::unordered_map<int, bool> FavoriteService::batchCheckFavoritedStatus(
+    int userId,
+    const std::vector<int>& postIds
+) {
+    std::unordered_map<int, bool> result;
+    
+    try {
+        // 空列表检查
+        if (postIds.empty()) {
+            Logger::info("batchCheckFavoritedStatus: 帖子ID列表为空");
+            return result;
+        }
+        
+        Logger::info("batchCheckFavoritedStatus: 批量查询用户 " + std::to_string(userId) + 
+                    " 对 " + std::to_string(postIds.size()) + " 个帖子的收藏状态");
+        
+        // 获取数据库连接
+        ConnectionGuard connGuard(DatabaseConnectionPool::getInstance());
+        if (!connGuard.isValid()) {
+            Logger::error("batchCheckFavoritedStatus: 获取数据库连接失败");
+            return result;
+        }
+        
+        MYSQL* conn = connGuard.get();
+        
+        // 调用Repository批量查询
+        result = favoriteRepo_->batchExistsForPosts(conn, userId, postIds);
+        
+        // 统计信息
+        int favoritedCount = 0;
+        for (const auto& pair : result) {
+            if (pair.second) favoritedCount++;
+        }
+        
+        Logger::info("batchCheckFavoritedStatus: 批量查询完成，" + std::to_string(favoritedCount) + 
+                    "/" + std::to_string(postIds.size()) + " 个帖子已收藏");
+        
+        return result;
+        
+    } catch (const std::exception& e) {
+        Logger::error("batchCheckFavoritedStatus异常: " + std::string(e.what()));
+        return result;
+    }
+}

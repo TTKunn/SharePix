@@ -10,6 +10,8 @@
 #include "utils/logger.h"
 #include <cstring>
 #include <stdexcept>
+#include <sstream>
+#include <chrono>
 
 // 创建点赞记录
 bool LikeRepository::create(MYSQL* conn, int userId, int postId) {
@@ -368,5 +370,142 @@ std::vector<Like> LikeRepository::findByUserId(MYSQL* conn, int userId, int limi
     } catch (const std::exception& e) {
         Logger::error("Exception in LikeRepository::findByUserId: " + std::string(e.what()));
         return likes;
+    }
+}
+
+// 批量检查用户对多个帖子的点赞状态
+std::unordered_map<int, bool> LikeRepository::batchExistsForPosts(
+    MYSQL* conn,
+    int userId,
+    const std::vector<int>& postIds
+) {
+    std::unordered_map<int, bool> result;
+    
+    try {
+        // ========================================
+        // 第1步：初始化所有帖子为"未点赞"
+        // ========================================
+        for (int postId : postIds) {
+            result[postId] = false;
+        }
+        
+        // 空列表检查
+        if (postIds.empty()) {
+            Logger::info("batchExistsForPosts: 帖子ID列表为空");
+            return result;
+        }
+        
+        if (!conn) {
+            Logger::error("batchExistsForPosts: 数据库连接为空");
+            return result;
+        }
+        
+        Logger::info("batchExistsForPosts: 批量查询用户 " + std::to_string(userId) + 
+                    " 对 " + std::to_string(postIds.size()) + " 个帖子的点赞状态");
+        
+        // ========================================
+        // 第2步：构建SQL
+        // SELECT post_id FROM likes 
+        // WHERE user_id = ? AND post_id IN (?, ?, ...)
+        // ========================================
+        std::ostringstream sqlBuilder;
+        sqlBuilder << "SELECT post_id FROM likes WHERE user_id = ? AND post_id IN (";
+        
+        for (size_t i = 0; i < postIds.size(); i++) {
+            if (i > 0) sqlBuilder << ", ";
+            sqlBuilder << "?";
+        }
+        sqlBuilder << ")";
+        
+        std::string sql = sqlBuilder.str();
+        Logger::debug("batchExistsForPosts SQL: " + sql);
+        
+        // ========================================
+        // 第3步：准备预编译语句
+        // ========================================
+        MySQLStatement stmt(conn);
+        if (!stmt.isValid()) {
+            Logger::error("batchExistsForPosts: 创建语句失败");
+            return result;
+        }
+        
+        if (mysql_stmt_prepare(stmt.get(), sql.c_str(), sql.length()) != 0) {
+            Logger::error("batchExistsForPosts: 预编译失败: " + std::string(mysql_stmt_error(stmt.get())));
+            return result;
+        }
+        
+        // ========================================
+        // 第4步：绑定参数
+        // 参数数量 = 1 (user_id) + N (post_ids)
+        // ========================================
+        size_t paramCount = 1 + postIds.size();
+        std::vector<MYSQL_BIND> binds(paramCount);
+        std::memset(binds.data(), 0, paramCount * sizeof(MYSQL_BIND));
+        
+        // 绑定user_id
+        binds[0].buffer_type = MYSQL_TYPE_LONG;
+        binds[0].buffer = const_cast<int*>(&userId);
+        binds[0].is_null = 0;
+        
+        // 绑定所有post_id
+        for (size_t i = 0; i < postIds.size(); i++) {
+            binds[i + 1].buffer_type = MYSQL_TYPE_LONG;
+            binds[i + 1].buffer = const_cast<int*>(&postIds[i]);
+            binds[i + 1].is_null = 0;
+        }
+        
+        if (mysql_stmt_bind_param(stmt.get(), binds.data()) != 0) {
+            Logger::error("batchExistsForPosts: 绑定参数失败: " + std::string(mysql_stmt_error(stmt.get())));
+            return result;
+        }
+        
+        // ========================================
+        // 第5步：执行查询
+        // ========================================
+        auto startTime = std::chrono::steady_clock::now();
+        
+        if (mysql_stmt_execute(stmt.get()) != 0) {
+            Logger::error("batchExistsForPosts: 执行查询失败: " + std::string(mysql_stmt_error(stmt.get())));
+            return result;
+        }
+        
+        // ========================================
+        // 第6步：绑定结果列
+        // ========================================
+        int likedPostId;
+        MYSQL_BIND resultBind;
+        std::memset(&resultBind, 0, sizeof(MYSQL_BIND));
+        resultBind.buffer_type = MYSQL_TYPE_LONG;
+        resultBind.buffer = &likedPostId;
+        resultBind.is_null = 0;
+        
+        if (mysql_stmt_bind_result(stmt.get(), &resultBind) != 0) {
+            Logger::error("batchExistsForPosts: 绑定结果失败: " + std::string(mysql_stmt_error(stmt.get())));
+            return result;
+        }
+        
+        // ========================================
+        // 第7步：读取结果集
+        // ========================================
+        int likedCount = 0;
+        while (mysql_stmt_fetch(stmt.get()) == 0) {
+            result[likedPostId] = true;  // 标记为已点赞
+            likedCount++;
+        }
+        
+        auto endTime = std::chrono::steady_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
+            endTime - startTime
+        ).count();
+        
+        Logger::info("batchExistsForPosts: 批量查询完成，" + std::to_string(likedCount) + "/" + 
+                    std::to_string(postIds.size()) + " 个帖子已点赞，耗时: " + 
+                    std::to_string(duration) + "ms");
+        
+        return result;
+        
+    } catch (const std::exception& e) {
+        Logger::error("batchExistsForPosts异常: " + std::string(e.what()));
+        return result;
     }
 }

@@ -11,6 +11,7 @@
 #include <mysql/mysql.h>
 #include <optional>
 #include <vector>
+#include <unordered_map>
 
 /**
  * @brief 点赞数据访问类
@@ -73,6 +74,24 @@ public:
      * @return 点赞列表
      */
     std::vector<Like> findByUserId(MYSQL* conn, int userId, int limit = 20, int offset = 0);
+
+    /**
+     * @brief 批量检查用户对多个帖子的点赞状态
+     * @param conn MySQL连接
+     * @param userId 用户ID（物理ID）
+     * @param postIds 帖子ID列表（物理ID）
+     * @return 点赞状态映射表（key=postId, value=是否点赞）
+     *
+     * @example
+     *   std::vector<int> postIds = {1, 2, 3};
+     *   auto result = batchExistsForPosts(conn, 123, postIds);
+     *   // result = {1: true, 2: false, 3: true}
+     */
+    std::unordered_map<int, bool> batchExistsForPosts(
+        MYSQL* conn,
+        int userId,
+        const std::vector<int>& postIds
+    );
 
 private:
     /**

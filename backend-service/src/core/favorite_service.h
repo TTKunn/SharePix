@@ -10,6 +10,7 @@
 #include <string>
 #include <memory>
 #include <vector>
+#include <unordered_map>
 #include "models/post.h"
 
 // 前向声明
@@ -139,6 +140,24 @@ public:
      * @return FavoriteListResult 收藏列表
      */
     FavoriteListResult getUserFavorites(int userId, int page, int pageSize);
+
+    /**
+     * @brief 批量检查用户对多个帖子的收藏状态
+     * @param userId 用户ID（物理ID）
+     * @param postIds 帖子ID列表（物理ID）
+     * @return 收藏状态映射表（key=postId, value=是否收藏）
+     *
+     * @example
+     *   std::vector<int> postIds = {1, 2, 3};
+     *   auto result = batchCheckFavoritedStatus(123, postIds);
+     *   // result = {1: true, 2: false, 3: true}
+     *
+     * @note 该方法内部管理数据库连接，调用方无需传入conn
+     */
+    std::unordered_map<int, bool> batchCheckFavoritedStatus(
+        int userId,
+        const std::vector<int>& postIds
+    );
 
 private:
     std::unique_ptr<FavoriteRepository> favoriteRepo_;

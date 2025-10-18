@@ -268,3 +268,49 @@ LikeStatusResult LikeService::getLikeStatus(int userId, const std::string& postI
         return result;
     }
 }
+
+// 批量检查用户对多个帖子的点赞状态
+std::unordered_map<int, bool> LikeService::batchCheckLikedStatus(
+    int userId,
+    const std::vector<int>& postIds
+) {
+    std::unordered_map<int, bool> result;
+    
+    try {
+        // 空列表检查
+        if (postIds.empty()) {
+            Logger::info("batchCheckLikedStatus: 帖子ID列表为空");
+            return result;
+        }
+        
+        Logger::info("batchCheckLikedStatus: 批量查询用户 " + std::to_string(userId) + 
+                    " 对 " + std::to_string(postIds.size()) + " 个帖子的点赞状态");
+        
+        // 获取数据库连接
+        ConnectionGuard connGuard(DatabaseConnectionPool::getInstance());
+        if (!connGuard.isValid()) {
+            Logger::error("batchCheckLikedStatus: 获取数据库连接失败");
+            return result;
+        }
+        
+        MYSQL* conn = connGuard.get();
+        
+        // 调用Repository批量查询
+        result = likeRepo_->batchExistsForPosts(conn, userId, postIds);
+        
+        // 统计信息
+        int likedCount = 0;
+        for (const auto& pair : result) {
+            if (pair.second) likedCount++;
+        }
+        
+        Logger::info("batchCheckLikedStatus: 批量查询完成，" + std::to_string(likedCount) + 
+                    "/" + std::to_string(postIds.size()) + " 个帖子已点赞");
+        
+        return result;
+        
+    } catch (const std::exception& e) {
+        Logger::error("batchCheckLikedStatus异常: " + std::string(e.what()));
+        return result;
+    }
+}

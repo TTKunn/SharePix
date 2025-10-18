@@ -11,6 +11,8 @@
 #include <mysql/mysql.h>
 #include <optional>
 #include <string>
+#include <vector>
+#include <unordered_map>
 
 /**
  * @brief 用户数据访问类
@@ -201,6 +203,22 @@ public:
      * @return UserStats对象（未找到返回std::nullopt）
      */
     std::optional<class UserStats> getUserStats(MYSQL* conn, const std::string& userId);
+
+    /**
+     * @brief 批量获取用户信息
+     * @param conn MySQL连接
+     * @param userIds 用户ID列表(物理ID)
+     * @return 用户信息映射表(key=userId, value=User对象)
+     *
+     * @example
+     *   std::vector<int> userIds = {1, 2, 3};
+     *   auto usersMap = batchGetUsers(conn, userIds);
+     *   // usersMap = {1: User{...}, 2: User{...}, 3: User{...}}
+     */
+    std::unordered_map<int, User> batchGetUsers(
+        MYSQL* conn,
+        const std::vector<int>& userIds
+    );
 
 private:
     /**

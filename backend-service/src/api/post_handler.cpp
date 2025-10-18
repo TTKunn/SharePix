@@ -19,7 +19,10 @@
 // 构造函数
 PostHandler::PostHandler() {
     postService_ = std::make_unique<PostService>();
-    Logger::info("PostHandler initialized");
+    userService_ = std::make_unique<UserService>();
+    likeService_ = std::make_unique<LikeService>();
+    favoriteService_ = std::make_unique<FavoriteService>();
+    Logger::info("PostHandler initialized with all services");
 }
 
 // 注册所有路由
@@ -665,7 +668,30 @@ void PostHandler::handleDeletePost(const httplib::Request& req, httplib::Respons
 // GET /api/v1/posts - 获取Feed流
 void PostHandler::handleGetRecentPosts(const httplib::Request& req, httplib::Response& res) {
     try {
-        // 1. 获取分页参数
+        Logger::info("=== [GET FEED] Request received ===");
+        
+        // ========================================
+        // 第1步: 可选JWT认证（游客/登录用户统一处理）
+        // ========================================
+        int currentUserId = 0;  // 0表示游客
+        bool isGuest = true;
+        
+        std::string token = extractToken(req);
+        if (!token.empty()) {
+            currentUserId = getUserIdFromToken(token);
+            if (currentUserId > 0) {
+                isGuest = false;
+                Logger::info("[GET FEED] ✓ User authenticated - UserID: " + std::to_string(currentUserId));
+            } else {
+                Logger::warning("[GET FEED] ⚠ Invalid token, degrading to guest mode");
+            }
+        } else {
+            Logger::info("[GET FEED] ℹ Guest mode - No token provided");
+        }
+        
+        // ========================================
+        // 第2步: 获取分页参数
+        // ========================================
         int page = 1;
         int pageSize = 20;
 
@@ -676,31 +702,127 @@ void PostHandler::handleGetRecentPosts(const httplib::Request& req, httplib::Res
         if (req.has_param("page_size")) {
             pageSize = std::stoi(req.get_param_value("page_size"));
         }
+        
+        Logger::info("[GET FEED] Query params - Page: " + std::to_string(page) + 
+                    ", PageSize: " + std::to_string(pageSize) + 
+                    ", IsGuest: " + std::string(isGuest ? "true" : "false"));
 
-        // 2. 调用Service查询帖子列表
+        // ========================================
+        // 第3步: 查询帖子列表（基础数据）
+        // ========================================
+        auto startTime = std::chrono::steady_clock::now();
+        
         PostQueryResult result = postService_->getRecentPosts(page, pageSize);
-
-        // 3. 返回结果
-        if (result.success) {
-            Json::Value data;
-            Json::Value postsArray(Json::arrayValue);
-
-            for (const auto& post : result.posts) {
-                postsArray.append(postToJson(post, true));
-            }
-
-            data["posts"] = postsArray;
-            data["total"] = result.total;
-            data["page"] = result.page;
-            data["page_size"] = result.pageSize;
-
-            sendSuccessResponse(res, "查询成功", data);
-        } else {
+        
+        if (!result.success) {
+            Logger::error("[GET FEED] ✗ Failed to query posts: " + result.message);
             sendErrorResponse(res, 400, result.message);
+            return;
+        }
+        
+        Logger::info("[GET FEED] ✓ Base posts queried: " + std::to_string(result.posts.size()) + 
+                    " posts, Total: " + std::to_string(result.total));
+
+        // ========================================
+        // 第4步: 收集需要批量查询的ID
+        // ========================================
+        std::vector<int> postIds;
+        std::vector<int> authorIds;
+        
+        for (const auto& post : result.posts) {
+            postIds.push_back(post.getId());
+            authorIds.push_back(post.getUserId());
+        }
+        
+        // ========================================
+        // 第5步: 批量查询作者信息（所有用户都需要）
+        // ========================================
+        std::unordered_map<int, User> authorMap;
+        
+        if (!authorIds.empty()) {
+            authorMap = userService_->batchGetUsers(authorIds);
+            Logger::info("[GET FEED] ✓ Authors queried: " + std::to_string(authorMap.size()) + 
+                        "/" + std::to_string(authorIds.size()) + " authors found");
+        }
+        
+        // ========================================
+        // 第6步: 批量查询互动状态（仅登录用户）
+        // ========================================
+        std::unordered_map<int, bool> likeStatusMap;
+        std::unordered_map<int, bool> favoriteStatusMap;
+        
+        if (!isGuest && !postIds.empty()) {
+            // 登录用户：批量查询真实的点赞/收藏状态
+            likeStatusMap = likeService_->batchCheckLikedStatus(currentUserId, postIds);
+            favoriteStatusMap = favoriteService_->batchCheckFavoritedStatus(currentUserId, postIds);
+            
+            int likedCount = 0, favoritedCount = 0;
+            for (const auto& pair : likeStatusMap) if (pair.second) likedCount++;
+            for (const auto& pair : favoriteStatusMap) if (pair.second) favoritedCount++;
+            
+            Logger::info("[GET FEED] ✓ Interaction status queried - " +
+                        std::to_string(likedCount) + " liked, " +
+                        std::to_string(favoritedCount) + " favorited");
+        } else {
+            // 游客：不查询数据库，初始化为全false
+            for (int postId : postIds) {
+                likeStatusMap[postId] = false;
+                favoriteStatusMap[postId] = false;
+            }
+            Logger::info("[GET FEED] ℹ Guest mode - Skipped interaction status query (performance optimization)");
+        }
+        
+        // ========================================
+        // 第7步: 组装JSON响应
+        // ========================================
+        Json::Value data;
+        Json::Value postsArray(Json::arrayValue);
+
+        for (const auto& post : result.posts) {
+            Json::Value postJson = postToJson(post, true);
+            
+            // 添加作者信息
+            auto authorIt = authorMap.find(post.getUserId());
+            if (authorIt != authorMap.end()) {
+                Json::Value authorInfo;
+                authorInfo["user_id"] = authorIt->second.getId();
+                authorInfo["username"] = authorIt->second.getUsername();
+                authorInfo["avatar_url"] = UrlHelper::toFullUrl(authorIt->second.getAvatarUrl());
+                postJson["author"] = authorInfo;
+            } else {
+                // 作者信息缺失时的默认值
+                Json::Value authorInfo;
+                authorInfo["user_id"] = post.getUserId();
+                authorInfo["username"] = "Unknown";
+                authorInfo["avatar_url"] = "";
+                postJson["author"] = authorInfo;
+            }
+            
+            // 添加互动状态（字段必须存在）
+            postJson["has_liked"] = likeStatusMap[post.getId()];
+            postJson["has_favorited"] = favoriteStatusMap[post.getId()];
+            
+            postsArray.append(postJson);
         }
 
+        data["posts"] = postsArray;
+        data["total"] = result.total;
+        data["page"] = result.page;
+        data["page_size"] = result.pageSize;
+        
+        auto endTime = std::chrono::steady_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
+            endTime - startTime
+        ).count();
+        
+        Logger::info("[GET FEED] ✓ Response assembled - Total time: " + 
+                    std::to_string(duration) + "ms, " +
+                    "Mode: " + std::string(isGuest ? "Guest" : "Authenticated"));
+
+        sendSuccessResponse(res, "查询成功", data);
+
     } catch (const std::exception& e) {
-        Logger::error("Exception in handleGetRecentPosts: " + std::string(e.what()));
+        Logger::error("[GET FEED] ✗ Exception: " + std::string(e.what()));
         sendErrorResponse(res, 500, "服务器内部错误");
     }
 }
@@ -708,10 +830,32 @@ void PostHandler::handleGetRecentPosts(const httplib::Request& req, httplib::Res
 // GET /api/v1/users/:user_id/posts - 获取用户帖子列表
 void PostHandler::handleGetUserPosts(const httplib::Request& req, httplib::Response& res) {
     try {
-        // 1. 获取user_id
-        int userId = std::stoi(req.path_params.at("user_id"));
+        Logger::info("=== [GET USER POSTS] Request received ===");
+        
+        // ========================================
+        // 第1步: 可选JWT认证（游客/登录用户统一处理）
+        // ========================================
+        int currentUserId = 0;  // 0表示游客
+        bool isGuest = true;
+        
+        std::string token = extractToken(req);
+        if (!token.empty()) {
+            currentUserId = getUserIdFromToken(token);
+            if (currentUserId > 0) {
+                isGuest = false;
+                Logger::info("[GET USER POSTS] ✓ User authenticated - UserID: " + std::to_string(currentUserId));
+            } else {
+                Logger::warning("[GET USER POSTS] ⚠ Invalid token, degrading to guest mode");
+            }
+        } else {
+            Logger::info("[GET USER POSTS] ℹ Guest mode - No token provided");
+        }
+        
+        // ========================================
+        // 第2步: 获取目标用户ID和分页参数
+        // ========================================
+        int targetUserId = std::stoi(req.path_params.at("user_id"));
 
-        // 2. 获取分页参数
         int page = 1;
         int pageSize = 20;
 
@@ -722,31 +866,128 @@ void PostHandler::handleGetUserPosts(const httplib::Request& req, httplib::Respo
         if (req.has_param("page_size")) {
             pageSize = std::stoi(req.get_param_value("page_size"));
         }
+        
+        Logger::info("[GET USER POSTS] Query params - Target UserID: " + std::to_string(targetUserId) +
+                    ", Page: " + std::to_string(page) + 
+                    ", PageSize: " + std::to_string(pageSize) + 
+                    ", IsGuest: " + std::string(isGuest ? "true" : "false"));
 
-        // 3. 调用Service查询帖子列表
-        PostQueryResult result = postService_->getUserPosts(userId, page, pageSize);
+        // ========================================
+        // 第3步: 查询用户帖子列表（基础数据）
+        // ========================================
+        auto startTime = std::chrono::steady_clock::now();
+        
+        PostQueryResult result = postService_->getUserPosts(targetUserId, page, pageSize);
 
-        // 4. 返回结果
-        if (result.success) {
-            Json::Value data;
-            Json::Value postsArray(Json::arrayValue);
-
-            for (const auto& post : result.posts) {
-                postsArray.append(postToJson(post, true));
-            }
-
-            data["posts"] = postsArray;
-            data["total"] = result.total;
-            data["page"] = result.page;
-            data["page_size"] = result.pageSize;
-
-            sendSuccessResponse(res, "查询成功", data);
-        } else {
+        if (!result.success) {
+            Logger::error("[GET USER POSTS] ✗ Failed to query posts: " + result.message);
             sendErrorResponse(res, 400, result.message);
+            return;
+        }
+        
+        Logger::info("[GET USER POSTS] ✓ Base posts queried: " + std::to_string(result.posts.size()) + 
+                    " posts, Total: " + std::to_string(result.total));
+
+        // ========================================
+        // 第4步: 收集需要批量查询的ID
+        // ========================================
+        std::vector<int> postIds;
+        std::vector<int> authorIds;
+        
+        for (const auto& post : result.posts) {
+            postIds.push_back(post.getId());
+            authorIds.push_back(post.getUserId());
+        }
+        
+        // ========================================
+        // 第5步: 批量查询作者信息（所有用户都需要）
+        // ========================================
+        std::unordered_map<int, User> authorMap;
+        
+        if (!authorIds.empty()) {
+            authorMap = userService_->batchGetUsers(authorIds);
+            Logger::info("[GET USER POSTS] ✓ Authors queried: " + std::to_string(authorMap.size()) + 
+                        "/" + std::to_string(authorIds.size()) + " authors found");
+        }
+        
+        // ========================================
+        // 第6步: 批量查询互动状态（仅登录用户）
+        // ========================================
+        std::unordered_map<int, bool> likeStatusMap;
+        std::unordered_map<int, bool> favoriteStatusMap;
+        
+        if (!isGuest && !postIds.empty()) {
+            // 登录用户：批量查询真实的点赞/收藏状态
+            likeStatusMap = likeService_->batchCheckLikedStatus(currentUserId, postIds);
+            favoriteStatusMap = favoriteService_->batchCheckFavoritedStatus(currentUserId, postIds);
+            
+            int likedCount = 0, favoritedCount = 0;
+            for (const auto& pair : likeStatusMap) if (pair.second) likedCount++;
+            for (const auto& pair : favoriteStatusMap) if (pair.second) favoritedCount++;
+            
+            Logger::info("[GET USER POSTS] ✓ Interaction status queried - " +
+                        std::to_string(likedCount) + " liked, " +
+                        std::to_string(favoritedCount) + " favorited");
+        } else {
+            // 游客：不查询数据库，初始化为全false
+            for (int postId : postIds) {
+                likeStatusMap[postId] = false;
+                favoriteStatusMap[postId] = false;
+            }
+            Logger::info("[GET USER POSTS] ℹ Guest mode - Skipped interaction status query (performance optimization)");
+        }
+        
+        // ========================================
+        // 第7步: 组装JSON响应
+        // ========================================
+        Json::Value data;
+        Json::Value postsArray(Json::arrayValue);
+
+        for (const auto& post : result.posts) {
+            Json::Value postJson = postToJson(post, true);
+            
+            // 添加作者信息
+            auto authorIt = authorMap.find(post.getUserId());
+            if (authorIt != authorMap.end()) {
+                Json::Value authorInfo;
+                authorInfo["user_id"] = authorIt->second.getId();
+                authorInfo["username"] = authorIt->second.getUsername();
+                authorInfo["avatar_url"] = UrlHelper::toFullUrl(authorIt->second.getAvatarUrl());
+                postJson["author"] = authorInfo;
+            } else {
+                // 作者信息缺失时的默认值
+                Json::Value authorInfo;
+                authorInfo["user_id"] = post.getUserId();
+                authorInfo["username"] = "Unknown";
+                authorInfo["avatar_url"] = "";
+                postJson["author"] = authorInfo;
+            }
+            
+            // 添加互动状态（字段必须存在）
+            postJson["has_liked"] = likeStatusMap[post.getId()];
+            postJson["has_favorited"] = favoriteStatusMap[post.getId()];
+            
+            postsArray.append(postJson);
         }
 
+        data["posts"] = postsArray;
+        data["total"] = result.total;
+        data["page"] = result.page;
+        data["page_size"] = result.pageSize;
+        
+        auto endTime = std::chrono::steady_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
+            endTime - startTime
+        ).count();
+        
+        Logger::info("[GET USER POSTS] ✓ Response assembled - Total time: " + 
+                    std::to_string(duration) + "ms, " +
+                    "Mode: " + std::string(isGuest ? "Guest" : "Authenticated"));
+
+        sendSuccessResponse(res, "查询成功", data);
+
     } catch (const std::exception& e) {
-        Logger::error("Exception in handleGetUserPosts: " + std::string(e.what()));
+        Logger::error("[GET USER POSTS] ✗ Exception: " + std::string(e.what()));
         sendErrorResponse(res, 500, "服务器内部错误");
     }
 }

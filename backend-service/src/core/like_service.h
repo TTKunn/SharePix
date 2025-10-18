@@ -9,6 +9,8 @@
 
 #include <string>
 #include <memory>
+#include <unordered_map>
+#include <vector>
 
 // 前向声明
 class LikeRepository;
@@ -113,6 +115,24 @@ public:
      * @return LikeStatusResult 点赞状态
      */
     LikeStatusResult getLikeStatus(int userId, const std::string& postId);
+
+    /**
+     * @brief 批量检查用户对多个帖子的点赞状态
+     * @param userId 用户ID（物理ID）
+     * @param postIds 帖子ID列表（物理ID）
+     * @return 点赞状态映射表（key=postId, value=是否点赞）
+     *
+     * @example
+     *   std::vector<int> postIds = {1, 2, 3};
+     *   auto result = batchCheckLikedStatus(123, postIds);
+     *   // result = {1: true, 2: false, 3: true}
+     *
+     * @note 该方法内部管理数据库连接，调用方无需传入conn
+     */
+    std::unordered_map<int, bool> batchCheckLikedStatus(
+        int userId,
+        const std::vector<int>& postIds
+    );
 
 private:
     std::unique_ptr<LikeRepository> likeRepo_;

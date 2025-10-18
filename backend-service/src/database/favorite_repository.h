@@ -12,6 +12,7 @@
 #include <mysql/mysql.h>
 #include <optional>
 #include <vector>
+#include <unordered_map>
 
 /**
  * @brief 收藏数据访问类
@@ -92,6 +93,24 @@ public:
      * @return 收藏总数
      */
     int getUserFavoriteCount(MYSQL* conn, int userId);
+
+    /**
+     * @brief 批量检查用户对多个帖子的收藏状态
+     * @param conn MySQL连接
+     * @param userId 用户ID（物理ID）
+     * @param postIds 帖子ID列表（物理ID）
+     * @return 收藏状态映射表（key=postId, value=是否收藏）
+     *
+     * @example
+     *   std::vector<int> postIds = {1, 2, 3};
+     *   auto result = batchExistsForPosts(conn, 123, postIds);
+     *   // result = {1: true, 2: false, 3: true}
+     */
+    std::unordered_map<int, bool> batchExistsForPosts(
+        MYSQL* conn,
+        int userId,
+        const std::vector<int>& postIds
+    );
 
 private:
     /**

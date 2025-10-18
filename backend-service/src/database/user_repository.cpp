@@ -1108,3 +1108,208 @@ std::optional<UserStats> UserRepository::getUserStats(MYSQL* conn, const std::st
     }
 }
 
+// 批量获取用户信息
+std::unordered_map<int, User> UserRepository::batchGetUsers(
+    MYSQL* conn,
+    const std::vector<int>& userIds
+) {
+    std::unordered_map<int, User> result;
+    
+    try {
+        // 空列表检查
+        if (userIds.empty()) {
+            Logger::info("batchGetUsers: 用户ID列表为空");
+            return result;
+        }
+        
+        if (!conn) {
+            Logger::error("batchGetUsers: 数据库连接为空");
+            return result;
+        }
+        
+        Logger::info("batchGetUsers: 批量查询 " + std::to_string(userIds.size()) + " 个用户信息");
+        
+        // ========================================
+        // 第1步: 构建SQL - SELECT * FROM users WHERE id IN (?, ?, ...)
+        // ========================================
+        std::ostringstream sqlBuilder;
+        sqlBuilder << "SELECT id, user_id, username, real_name, avatar_url, "
+                   << "bio, gender, location, following_count, follower_count "
+                   << "FROM users WHERE id IN (";
+        
+        for (size_t i = 0; i < userIds.size(); i++) {
+            if (i > 0) sqlBuilder << ", ";
+            sqlBuilder << "?";
+        }
+        sqlBuilder << ")";
+        
+        std::string sql = sqlBuilder.str();
+        Logger::debug("batchGetUsers SQL: " + sql);
+        
+        // ========================================
+        // 第2步: 准备预编译语句
+        // ========================================
+        MySQLStatement stmt(conn);
+        if (!stmt.isValid()) {
+            Logger::error("batchGetUsers: 创建语句失败");
+            return result;
+        }
+        
+        if (mysql_stmt_prepare(stmt.get(), sql.c_str(), sql.length()) != 0) {
+            Logger::error("batchGetUsers: 预编译失败: " + std::string(mysql_stmt_error(stmt.get())));
+            return result;
+        }
+        
+        // ========================================
+        // 第3步: 绑定参数
+        // ========================================
+        std::vector<MYSQL_BIND> binds(userIds.size());
+        std::memset(binds.data(), 0, userIds.size() * sizeof(MYSQL_BIND));
+        
+        for (size_t i = 0; i < userIds.size(); i++) {
+            binds[i].buffer_type = MYSQL_TYPE_LONG;
+            binds[i].buffer = const_cast<int*>(&userIds[i]);
+            binds[i].is_null = 0;
+        }
+        
+        if (mysql_stmt_bind_param(stmt.get(), binds.data()) != 0) {
+            Logger::error("batchGetUsers: 绑定参数失败: " + std::string(mysql_stmt_error(stmt.get())));
+            return result;
+        }
+        
+        // ========================================
+        // 第4步: 执行查询
+        // ========================================
+        auto startTime = std::chrono::steady_clock::now();
+        
+        if (mysql_stmt_execute(stmt.get()) != 0) {
+            Logger::error("batchGetUsers: 执行查询失败: " + std::string(mysql_stmt_error(stmt.get())));
+            return result;
+        }
+        
+        // ========================================
+        // 第5步: 绑定结果列
+        // ========================================
+        int id;
+        char userIdBuf[128], usernameBuf[128], realNameBuf[128], avatarBuf[256];
+        char bioBuf[501], genderBuf[25], locationBuf[101];
+        unsigned long userIdLen, usernameLen, realNameLen, avatarLen;
+        unsigned long bioLen, genderLen, locationLen;
+        bool avatarIsNull, bioIsNull, genderIsNull, locationIsNull;
+        int followingCount, followerCount;
+        
+        MYSQL_BIND resultBinds[10];
+        std::memset(resultBinds, 0, sizeof(resultBinds));
+        
+        // id
+        resultBinds[0].buffer_type = MYSQL_TYPE_LONG;
+        resultBinds[0].buffer = &id;
+        
+        // user_id
+        resultBinds[1].buffer_type = MYSQL_TYPE_STRING;
+        resultBinds[1].buffer = userIdBuf;
+        resultBinds[1].buffer_length = sizeof(userIdBuf);
+        resultBinds[1].length = &userIdLen;
+        
+        // username
+        resultBinds[2].buffer_type = MYSQL_TYPE_STRING;
+        resultBinds[2].buffer = usernameBuf;
+        resultBinds[2].buffer_length = sizeof(usernameBuf);
+        resultBinds[2].length = &usernameLen;
+        
+        // real_name
+        resultBinds[3].buffer_type = MYSQL_TYPE_STRING;
+        resultBinds[3].buffer = realNameBuf;
+        resultBinds[3].buffer_length = sizeof(realNameBuf);
+        resultBinds[3].length = &realNameLen;
+        
+        // avatar_url (可为空)
+        resultBinds[4].buffer_type = MYSQL_TYPE_STRING;
+        resultBinds[4].buffer = avatarBuf;
+        resultBinds[4].buffer_length = sizeof(avatarBuf);
+        resultBinds[4].length = &avatarLen;
+        resultBinds[4].is_null = &avatarIsNull;
+        
+        // bio (可为空)
+        resultBinds[5].buffer_type = MYSQL_TYPE_STRING;
+        resultBinds[5].buffer = bioBuf;
+        resultBinds[5].buffer_length = sizeof(bioBuf);
+        resultBinds[5].length = &bioLen;
+        resultBinds[5].is_null = &bioIsNull;
+        
+        // gender (可为空)
+        resultBinds[6].buffer_type = MYSQL_TYPE_STRING;
+        resultBinds[6].buffer = genderBuf;
+        resultBinds[6].buffer_length = sizeof(genderBuf);
+        resultBinds[6].length = &genderLen;
+        resultBinds[6].is_null = &genderIsNull;
+        
+        // location (可为空)
+        resultBinds[7].buffer_type = MYSQL_TYPE_STRING;
+        resultBinds[7].buffer = locationBuf;
+        resultBinds[7].buffer_length = sizeof(locationBuf);
+        resultBinds[7].length = &locationLen;
+        resultBinds[7].is_null = &locationIsNull;
+        
+        // following_count
+        resultBinds[8].buffer_type = MYSQL_TYPE_LONG;
+        resultBinds[8].buffer = &followingCount;
+        
+        // follower_count
+        resultBinds[9].buffer_type = MYSQL_TYPE_LONG;
+        resultBinds[9].buffer = &followerCount;
+        
+        if (mysql_stmt_bind_result(stmt.get(), resultBinds) != 0) {
+            Logger::error("batchGetUsers: 绑定结果失败: " + std::string(mysql_stmt_error(stmt.get())));
+            return result;
+        }
+        
+        // ========================================
+        // 第6步: 读取结果集
+        // ========================================
+        while (mysql_stmt_fetch(stmt.get()) == 0) {
+            User user;
+            user.setId(id);
+            user.setUserId(std::string(userIdBuf, userIdLen));
+            user.setUsername(std::string(usernameBuf, usernameLen));
+            user.setRealName(std::string(realNameBuf, realNameLen));
+            
+            if (!avatarIsNull) {
+                user.setAvatarUrl(std::string(avatarBuf, avatarLen));
+            }
+            
+            if (!bioIsNull) {
+                user.setBio(std::string(bioBuf, bioLen));
+            }
+            
+            if (!genderIsNull) {
+                user.setGender(std::string(genderBuf, genderLen));
+            }
+            
+            if (!locationIsNull) {
+                user.setLocation(std::string(locationBuf, locationLen));
+            }
+            
+            user.setFollowingCount(followingCount);
+            user.setFollowerCount(followerCount);
+            
+            result[id] = user;
+        }
+        
+        auto endTime = std::chrono::steady_clock::now();
+        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(
+            endTime - startTime
+        ).count();
+        
+        Logger::info("batchGetUsers: 批量查询完成，找到 " + std::to_string(result.size()) + 
+                    "/" + std::to_string(userIds.size()) + " 个用户，耗时: " + 
+                    std::to_string(duration) + "ms");
+        
+        return result;
+        
+    } catch (const std::exception& e) {
+        Logger::error("batchGetUsers异常: " + std::string(e.what()));
+        return result;
+    }
+}
+
