@@ -681,7 +681,7 @@ UploadAvatarResult AuthService::uploadAvatar(int userId, const std::string& temp
         
         // 2. 调用AvatarProcessor处理图片
         // 使用相对路径 "../uploads/avatars/" 与图片存储保持一致
-        std::string avatarDir = "../uploads/avatars/";
+        std::string avatarDir = "../uploads/avatars";
         auto processResult = AvatarProcessor::processAvatar(tempFilePath, userIdStr, avatarDir);
         
         if (!processResult.success) {

@@ -9,6 +9,11 @@
 
 #include <string>
 #include <utility>
+#include <memory>
+#include <cstdlib>  // for free()
+
+// 前置声明stb_image函数
+extern "C" void stbi_image_free(void* retval_from_stbi_load);
 
 /**
  * @brief 头像处理结果结构体
@@ -78,10 +83,36 @@ private:
     static constexpr int AVATAR_SIZE = 200;        // 头像尺寸（200x200）
     static constexpr int JPEG_QUALITY = 80;        // JPEG压缩质量（80%）
     static constexpr long long MAX_FILE_SIZE = 5 * 1024 * 1024;  // 最大文件大小（5MB）
-    
+
+    /**
+     * @brief stbi_image自定义删除器（用于智能指针）
+     */
+    struct StbiDeleter {
+        void operator()(unsigned char* ptr) const {
+            if (ptr) {
+                stbi_image_free(ptr);
+            }
+        }
+    };
+
+    /**
+     * @brief malloc自定义删除器（用于智能指针）
+     */
+    struct MallocDeleter {
+        void operator()(unsigned char* ptr) const {
+            if (ptr) {
+                free(ptr);
+            }
+        }
+    };
+
+    // 智能指针类型定义
+    using StbiPtr = std::unique_ptr<unsigned char, StbiDeleter>;
+    using MallocPtr = std::unique_ptr<unsigned char, MallocDeleter>;
+
     /**
      * @brief 裁剪图片为正方形（居中裁剪）
-     * 
+     *
      * @param inputData 输入图片数据
      * @param width 原图宽度
      * @param height 原图高度

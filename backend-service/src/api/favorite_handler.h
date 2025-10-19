@@ -9,6 +9,8 @@
 
 #include "api/base_handler.h"
 #include "core/favorite_service.h"
+#include "core/user_service.h"
+#include "core/like_service.h"
 #include <memory>
 
 /**
@@ -36,6 +38,8 @@ public:
 
 private:
     std::unique_ptr<FavoriteService> favoriteService_;
+    std::unique_ptr<UserService> userService_;           // 用户服务（批量查询用户信息）
+    std::unique_ptr<LikeService> likeService_;           // 点赞服务（批量查询点赞状态）
 
     /**
      * @brief POST /api/v1/posts/:post_id/favorite - 收藏帖子
@@ -59,7 +63,7 @@ private:
     void handleGetFavoriteStatus(const httplib::Request& req, httplib::Response& res);
 
     /**
-     * @brief GET /api/v1/users/favorites - 获取用户收藏列表
+     * @brief GET /api/v1/my/favorites - 获取用户收藏列表
      * @param req HTTP请求
      * @param res HTTP响应
      */

@@ -262,6 +262,7 @@ void HttpServer::setupStaticFiles() {
         // 从upload配置获取图片存储目录（支持独立配置）
         std::string imagesDir = config.get<std::string>("upload.image_dir", "uploads/images");
         std::string thumbnailsDir = config.get<std::string>("upload.thumbnail_dir", "uploads/thumbnails");
+        std::string avatarsDir = config.get<std::string>("upload.avatar_dir", "../uploads/avatars");
 
         // 移除末尾的斜杠（如果有）
         if (!imagesDir.empty() && imagesDir.back() == '/') {
@@ -270,15 +271,20 @@ void HttpServer::setupStaticFiles() {
         if (!thumbnailsDir.empty() && thumbnailsDir.back() == '/') {
             thumbnailsDir.pop_back();
         }
+        if (!avatarsDir.empty() && avatarsDir.back() == '/') {
+            avatarsDir.pop_back();
+        }
 
         // 创建目录（如果不存在）
         int result1 = system(("mkdir -p " + imagesDir + " 2>/dev/null").c_str());
         int result2 = system(("mkdir -p " + thumbnailsDir + " 2>/dev/null").c_str());
-        (void)result1; (void)result2; // 避免编译器警告
+        int result3 = system(("mkdir -p " + avatarsDir + " 2>/dev/null").c_str());
+        (void)result1; (void)result2; (void)result3; // 避免编译器警告
 
         // 设置静态文件挂载点
         server_->set_mount_point("/uploads/images", imagesDir);
         server_->set_mount_point("/uploads/thumbnails", thumbnailsDir);
+        server_->set_mount_point("/uploads/avatars", avatarsDir);
 
         // 设置MIME类型映射
         server_->set_file_extension_and_mimetype_mapping("jpg", "image/jpeg");
@@ -295,6 +301,7 @@ void HttpServer::setupStaticFiles() {
         Logger::info("Static files configured successfully:");
         Logger::info("  - Images: /uploads/images -> " + imagesDir);
         Logger::info("  - Thumbnails: /uploads/thumbnails -> " + thumbnailsDir);
+        Logger::info("  - Avatars: /uploads/avatars -> " + avatarsDir);
         Logger::info("  - Cache enabled: " + std::string(enableCache ? "yes" : "no"));
 
     } catch (const std::exception& e) {
