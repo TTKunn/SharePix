@@ -9,12 +9,15 @@
 #include "utils/logger.h"
 #include "utils/url_helper.h"
 #include "utils/base64_decoder.h"
+#include "database/user_repository.h"
 #include <json/json.h>
 #include <fstream>
 #include <sstream>
 #include <ctime>
 #include <chrono>
 #include <cstdlib>
+#include <algorithm>
+#include <cctype>
 
 // 构造函数
 PostHandler::PostHandler() {
@@ -52,7 +55,7 @@ void PostHandler::registerRoutes(httplib::Server& server) {
         handleGetRecentPosts(req, res);
     });
 
-    // 获取用户帖子列表
+    // 获取用户帖子列表 (支持逻辑ID和物理ID)
     server.Get("/api/v1/users/:user_id/posts", [this](const httplib::Request& req, httplib::Response& res) {
         handleGetUserPosts(req, res);
     });
@@ -785,14 +788,14 @@ void PostHandler::handleGetRecentPosts(const httplib::Request& req, httplib::Res
             auto authorIt = authorMap.find(post.getUserId());
             if (authorIt != authorMap.end()) {
                 Json::Value authorInfo;
-                authorInfo["user_id"] = authorIt->second.getId();
+                authorInfo["user_id"] = authorIt->second.getUserId();  // 使用逻辑ID
                 authorInfo["username"] = authorIt->second.getUsername();
                 authorInfo["avatar_url"] = UrlHelper::toFullUrl(authorIt->second.getAvatarUrl());
                 postJson["author"] = authorInfo;
             } else {
                 // 作者信息缺失时的默认值
                 Json::Value authorInfo;
-                authorInfo["user_id"] = post.getUserId();
+                authorInfo["user_id"] = "";  // 逻辑ID缺失
                 authorInfo["username"] = "Unknown";
                 authorInfo["avatar_url"] = "";
                 postJson["author"] = authorInfo;
@@ -852,9 +855,34 @@ void PostHandler::handleGetUserPosts(const httplib::Request& req, httplib::Respo
         }
         
         // ========================================
-        // 第2步: 获取目标用户ID和分页参数
+        // 第2步: 智能解析用户ID和分页参数
         // ========================================
-        int targetUserId = std::stoi(req.path_params.at("user_id"));
+        int targetUserId = 0;
+        std::string userIdParam = req.path_params.at("user_id");
+        
+        // 智能判断: 纯数字=物理ID, 包含字母=逻辑ID
+        if (std::all_of(userIdParam.begin(), userIdParam.end(), ::isdigit)) {
+            // 场景1: 物理ID (纯数字,如"7")
+            targetUserId = std::stoi(userIdParam);
+            Logger::info("[GET USER POSTS] Physical user_id detected: " + userIdParam);
+        } else {
+            // 场景2: 逻辑ID (包含字母,如"USR_2025Q4_ABC123")
+            Logger::info("[GET USER POSTS] Logical user_id detected: " + userIdParam);
+            
+            // 通过逻辑ID查询用户
+            UserRepository userRepo;
+            auto user = userRepo.findByUserId(userIdParam);
+            
+            if (!user.has_value()) {
+                Logger::error("[GET USER POSTS] ✗ User not found: " + userIdParam);
+                sendErrorResponse(res, 404, "用户不存在");
+                return;
+            }
+            
+            targetUserId = user->getId();  // 获取物理ID
+            Logger::info("[GET USER POSTS] ✓ User found - Physical ID: " + 
+                         std::to_string(targetUserId));
+        }
 
         int page = 1;
         int pageSize = 20;
@@ -950,14 +978,14 @@ void PostHandler::handleGetUserPosts(const httplib::Request& req, httplib::Respo
             auto authorIt = authorMap.find(post.getUserId());
             if (authorIt != authorMap.end()) {
                 Json::Value authorInfo;
-                authorInfo["user_id"] = authorIt->second.getId();
+                authorInfo["user_id"] = authorIt->second.getUserId();  // 使用逻辑ID
                 authorInfo["username"] = authorIt->second.getUsername();
                 authorInfo["avatar_url"] = UrlHelper::toFullUrl(authorIt->second.getAvatarUrl());
                 postJson["author"] = authorInfo;
             } else {
                 // 作者信息缺失时的默认值
                 Json::Value authorInfo;
-                authorInfo["user_id"] = post.getUserId();
+                authorInfo["user_id"] = "";  // 逻辑ID缺失
                 authorInfo["username"] = "Unknown";
                 authorInfo["avatar_url"] = "";
                 postJson["author"] = authorInfo;

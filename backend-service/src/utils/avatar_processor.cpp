@@ -168,8 +168,15 @@ bool AvatarProcessor::deleteOldAvatar(const std::string& avatarUrl) {
         return false;  // 不是头像文件路径，不处理
     }
     
-    // 构建完整文件路径
-    std::string filePath = "." + avatarUrl;  // 相对于项目根目录
+    // 从URL中提取路径部分（可能包含域名或只是路径）
+    std::string path = avatarUrl;
+    size_t uploadsPos = path.find("/uploads/avatars/");
+    if (uploadsPos != std::string::npos) {
+        path = path.substr(uploadsPos);  // 提取 "/uploads/avatars/xxx.jpg"
+    }
+    
+    // 构建完整文件路径：相对于backend-service目录，需要加 "../"
+    std::string filePath = ".." + path;  // "../uploads/avatars/xxx.jpg"
     
     if (unlink(filePath.c_str()) == 0) {
         Logger::info("旧头像已删除: " + avatarUrl);
