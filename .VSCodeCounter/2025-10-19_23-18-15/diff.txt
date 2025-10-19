@@ -1,0 +1,190 @@
+Date : 2025-10-19 23:18:15
+Directory : /home/kun/projects/SharePix
+Total : 141 files,  41194 codes, 991 comments, 11132 blanks, all 53317 lines
+
+Languages
++--------------+------------+------------+------------+------------+------------+
+| language     | files      | code       | comment    | blank      | total      |
++--------------+------------+------------+------------+------------+------------+
+| Markdown     |         91 |     37,779 |         10 |     10,229 |     48,018 |
+| C++          |         40 |      2,685 |        878 |        728 |      4,291 |
+| Shell Script |          9 |        714 |        100 |        172 |        986 |
+| MS SQL       |          1 |         16 |          3 |          3 |         22 |
++--------------+------------+------------+------------+------------+------------+
+
+Directories
++------------------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                                                                                   | files      | code       | comment    | blank      | total      |
++------------------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                                                                                      |        141 |     41,194 |        991 |     11,132 |     53,317 |
+| . (Files)                                                                                                              |          1 |         77 |          0 |         16 |         93 |
+| backend-service                                                                                                        |        140 |     41,117 |        991 |     11,116 |     53,224 |
+| backend-service/config                                                                                                 |          1 |         16 |          3 |          3 |         22 |
+| backend-service/deploy-static                                                                                          |          2 |          0 |          0 |          0 |          0 |
+| backend-service/deploy-static/build                                                                                    |          2 |          0 |          0 |          0 |          0 |
+| backend-service/deploy-static/build/knot-deploy-20251017-165249                                                        |          1 |       -155 |          0 |        -67 |       -222 |
+| backend-service/deploy-static/build/knot-deploy-20251017-165249/docs                                                   |          1 |       -155 |          0 |        -67 |       -222 |
+| backend-service/deploy-static/build/knot-deploy-20251017-165249/docs/api                                               |          1 |       -155 |          0 |        -67 |       -222 |
+| backend-service/deploy-static/build/knot-deploy-20251019-165820                                                        |          1 |        155 |          0 |         67 |        222 |
+| backend-service/deploy-static/build/knot-deploy-20251019-165820/docs                                                   |          1 |        155 |          0 |         67 |        222 |
+| backend-service/deploy-static/build/knot-deploy-20251019-165820/docs/api                                               |          1 |        155 |          0 |         67 |        222 |
+| backend-service/project_document                                                                                       |         86 |     37,623 |         23 |     10,170 |     47,816 |
+| backend-service/project_document (Files)                                                                               |         45 |     10,124 |         17 |      2,699 |     12,840 |
+| backend-service/project_document/backup_20251019_144638                                                                |         41 |     27,499 |          6 |      7,471 |     34,976 |
+| backend-service/src                                                                                                    |         40 |      2,685 |        878 |        728 |      4,291 |
+| backend-service/src/api                                                                                                |          8 |        489 |        156 |        132 |        777 |
+| backend-service/src/core                                                                                               |         11 |        591 |        252 |        166 |      1,009 |
+| backend-service/src/database                                                                                           |         11 |      1,205 |        304 |        320 |      1,829 |
+| backend-service/src/models                                                                                             |          6 |        129 |         58 |         33 |        220 |
+| backend-service/src/server                                                                                             |          2 |         12 |          1 |          1 |         14 |
+| backend-service/src/utils                                                                                              |          2 |        259 |        107 |         76 |        442 |
+| backend-service/test                                                                                                   |         11 |        793 |         87 |        215 |      1,095 |
++------------------------------------------------------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++------------------------------------------------------------------------------------------------------------------------+--------------+------------+------------+------------+------------+
+| filename                                                                                                               | language     | code       | comment    | blank      | total      |
++------------------------------------------------------------------------------------------------------------------------+--------------+------------+------------+------------+------------+
+| /home/kun/projects/SharePix/CLAUDE.md                                                                                  | Markdown     |         77 |          0 |         16 |         93 |
+| /home/kun/projects/SharePix/backend-service/config/database.sql                                                        | MS SQL       |         16 |          3 |          3 |         22 |
+| /home/kun/projects/SharePix/backend-service/deploy-static/build/knot-deploy-20251017-165249/docs/api/README.md         | Markdown     |       -155 |          0 |        -67 |       -222 |
+| /home/kun/projects/SharePix/backend-service/deploy-static/build/knot-deploy-20251019-165820/docs/api/README.md         | Markdown     |        155 |          0 |         67 |        222 |
+| /home/kun/projects/SharePix/backend-service/project_document/API_DOC_UPDATE.md                                         | Markdown     |       -197 |          0 |        -75 |       -272 |
+| /home/kun/projects/SharePix/backend-service/project_document/README.md                                                 | Markdown     |       -447 |          0 |       -147 |       -594 |
+| /home/kun/projects/SharePix/backend-service/project_document/[000]API文档.md                                             | Markdown     |        979 |          0 |        199 |      1,178 |
+| /home/kun/projects/SharePix/backend-service/project_document/[004]README.md                                            | Markdown     |        447 |          0 |        147 |        594 |
+| /home/kun/projects/SharePix/backend-service/project_document/[005]API_DOC_UPDATE.md                                    | Markdown     |        197 |          0 |         75 |        272 |
+| /home/kun/projects/SharePix/backend-service/project_document/[105]阶段C-2-多图片帖子系统.md                                     | Markdown     |         39 |          0 |         10 |         49 |
+| /home/kun/projects/SharePix/backend-service/project_document/[107]用户信息更新接口BUG修复报告.md                                   | Markdown     |       -383 |          0 |       -112 |       -495 |
+| /home/kun/projects/SharePix/backend-service/project_document/[108]Feed流性能优化报告.md                                       | Markdown     |       -400 |          0 |       -124 |       -524 |
+| /home/kun/projects/SharePix/backend-service/project_document/[109]阶段D-4-图片静态文件服务实现方案.md                                | Markdown     |        524 |          0 |        134 |        658 |
+| /home/kun/projects/SharePix/backend-service/project_document/[110]v2.4.0-图片URL自动前缀功能.md                                | Markdown     |       -253 |          0 |        -83 |       -336 |
+| /home/kun/projects/SharePix/backend-service/project_document/[111]阶段D-4-图片静态文件服务实现方案.md                                | Markdown     |       -524 |          0 |       -134 |       -658 |
+| /home/kun/projects/SharePix/backend-service/project_document/[112]Base64图片上传问题分析与解决方案.md                               | Markdown     |       -426 |          0 |       -153 |       -579 |
+| /home/kun/projects/SharePix/backend-service/project_document/[112]JWT测试.md                                             | Markdown     |       -644 |          0 |       -158 |       -802 |
+| /home/kun/projects/SharePix/backend-service/project_document/[112]评论功能实现方案.md                                          | Markdown     |      1,548 |          0 |        352 |      1,900 |
+| /home/kun/projects/SharePix/backend-service/project_document/[113]全流程测试报告-帖子管理重点.md                                    | Markdown     |       -284 |          0 |        -73 |       -357 |
+| /home/kun/projects/SharePix/backend-service/project_document/[113]日志监控指南-图片上传排查手册.md                                   | Markdown     |       -479 |          0 |       -163 |       -642 |
+| /home/kun/projects/SharePix/backend-service/project_document/[114]多图片功能修复和实现报告.md                                      | Markdown     |       -242 |          0 |        -72 |       -314 |
+| /home/kun/projects/SharePix/backend-service/project_document/[115]创建帖子接口支持JSON+Base64格式-实施计划.md                        | Markdown     |       -686 |          0 |       -202 |       -888 |
+| /home/kun/projects/SharePix/backend-service/project_document/[116]JSON+Base64内存崩溃紧急修复报告.md                             | Markdown     |       -265 |          0 |        -97 |       -362 |
+| /home/kun/projects/SharePix/backend-service/project_document/[121]关注功能完整测试报告.md                                        | Markdown     |        -57 |          0 |        -16 |        -73 |
+| /home/kun/projects/SharePix/backend-service/project_document/[122]关注功能测试问题汇总.md                                        | Markdown     |       -519 |          0 |       -178 |       -697 |
+| /home/kun/projects/SharePix/backend-service/project_document/[150]全流程测试报告-帖子管理重点.md                                    | Markdown     |        284 |          0 |         73 |        357 |
+| /home/kun/projects/SharePix/backend-service/project_document/[151]多图片功能修复和实现报告.md                                      | Markdown     |        242 |          0 |         72 |        314 |
+| /home/kun/projects/SharePix/backend-service/project_document/[152]Base64图片上传问题分析与解决方案.md                               | Markdown     |        426 |          0 |        153 |        579 |
+| /home/kun/projects/SharePix/backend-service/project_document/[153]日志监控指南-图片上传排查手册.md                                   | Markdown     |        479 |          0 |        163 |        642 |
+| /home/kun/projects/SharePix/backend-service/project_document/[154]创建帖子接口支持JSON+Base64格式-实施计划.md                        | Markdown     |        686 |          0 |        202 |        888 |
+| /home/kun/projects/SharePix/backend-service/project_document/[155]JSON+Base64内存崩溃紧急修复报告.md                             | Markdown     |        265 |          0 |         97 |        362 |
+| /home/kun/projects/SharePix/backend-service/project_document/[156]创建帖子请求流程文档.md                                        | Markdown     |        330 |          0 |        102 |        432 |
+| /home/kun/projects/SharePix/backend-service/project_document/[157]用户信息更新接口BUG修复报告.md                                   | Markdown     |        383 |          0 |        112 |        495 |
+| /home/kun/projects/SharePix/backend-service/project_document/[158]Feed流性能优化报告.md                                       | Markdown     |        400 |          0 |        124 |        524 |
+| /home/kun/projects/SharePix/backend-service/project_document/[159]JWT测试.md                                             | Markdown     |        644 |          0 |        158 |        802 |
+| /home/kun/projects/SharePix/backend-service/project_document/[160]v2.4.0-图片URL自动前缀功能.md                                | Markdown     |        253 |          0 |         83 |        336 |
+| /home/kun/projects/SharePix/backend-service/project_document/[161]关注功能测试问题汇总.md                                        | Markdown     |        519 |          0 |        178 |        697 |
+| /home/kun/projects/SharePix/backend-service/project_document/[162]关注功能完整测试报告.md                                        | Markdown     |         57 |          0 |         16 |         73 |
+| /home/kun/projects/SharePix/backend-service/project_document/[163]帖子接口用户ID逻辑化改造方案.md                                   | Markdown     |        738 |          0 |        236 |        974 |
+| /home/kun/projects/SharePix/backend-service/project_document/[164]帖子接口用户ID逻辑化改造-实施报告.md                                | Markdown     |        299 |          0 |        105 |        404 |
+| /home/kun/projects/SharePix/backend-service/project_document/[165]Feed流用户状态批量查询优化方案.md                                 | Markdown     |      1,669 |          0 |        406 |      2,075 |
+| /home/kun/projects/SharePix/backend-service/project_document/[166]帖子详情接口添加用户昵称字段-实施方案.md                               | Markdown     |        660 |          0 |        178 |        838 |
+| /home/kun/projects/SharePix/backend-service/project_document/[167]用户头像上传功能-实施方案.md                                     | Markdown     |      1,407 |          0 |        380 |      1,787 |
+| /home/kun/projects/SharePix/backend-service/project_document/[168]获取用户帖子接口问题修复方案.md                                    | Markdown     |        936 |          4 |        321 |      1,261 |
+| /home/kun/projects/SharePix/backend-service/project_document/[169]头像上传功能内存泄漏问题分析报告.md                                  | Markdown     |        608 |          0 |        182 |        790 |
+| /home/kun/projects/SharePix/backend-service/project_document/[170]收藏列表批量查询优化方案.md                                      | Markdown     |        911 |          0 |        233 |      1,144 |
+| /home/kun/projects/SharePix/backend-service/project_document/backup_20251019_144638/API_DOC_UPDATE.md                  | Markdown     |        197 |          0 |         75 |        272 |
+| /home/kun/projects/SharePix/backend-service/project_document/backup_20251019_144638/README.md                          | Markdown     |        447 |          0 |        147 |        594 |
+| /home/kun/projects/SharePix/backend-service/project_document/backup_20251019_144638/[000]API文档.md                      | Markdown     |      2,883 |          0 |        665 |      3,548 |
+| /home/kun/projects/SharePix/backend-service/project_document/backup_20251019_144638/[001]数据库设计文档.md                    | Markdown     |        341 |          0 |         92 |        433 |
+| /home/kun/projects/SharePix/backend-service/project_document/backup_20251019_144638/[002]项目架构文档.md                     | Markdown     |        415 |          0 |        108 |        523 |
+| /home/kun/projects/SharePix/backend-service/project_document/backup_20251019_144638/[003]环境安装配置教程.md                   | Markdown     |        277 |          0 |         70 |        347 |
+| /home/kun/projects/SharePix/backend-service/project_document/backup_20251019_144638/[100]阶段A-基础模块实现.md                 | Markdown     |      1,226 |          0 |        279 |      1,505 |
+| /home/kun/projects/SharePix/backend-service/project_document/backup_20251019_144638/[101]阶段B-用户认证模块.md                 | Markdown     |        689 |          0 |        155 |        844 |
+| /home/kun/projects/SharePix/backend-service/project_document/backup_20251019_144638/[102]阶段C-图片管理模块.md                 | Markdown     |        572 |          0 |        149 |        721 |
+| /home/kun/projects/SharePix/backend-service/project_document/backup_20251019_144638/[103]阶段C-1-图片管理模块第一次测试情况.md        | Markdown     |        381 |          0 |        106 |        487 |
+| /home/kun/projects/SharePix/backend-service/project_document/backup_20251019_144638/[104]Apifox测试流程-BUG修复验证.md         | Markdown     |        388 |          0 |         96 |        484 |
+| /home/kun/projects/SharePix/backend-service/project_document/backup_20251019_144638/[105]阶段C-2-多图片帖子系统.md              | Markdown     |        268 |          0 |        112 |        380 |
+| /home/kun/projects/SharePix/backend-service/project_document/backup_20251019_144638/[106]用户信息管理功能完善-实施计划.md            | Markdown     |      1,205 |          0 |        302 |      1,507 |
+| /home/kun/projects/SharePix/backend-service/project_document/backup_20251019_144638/[107]阶段D-1-互动系统点赞收藏功能实现计划.md       | Markdown     |      2,104 |          0 |        549 |      2,653 |
+| /home/kun/projects/SharePix/backend-service/project_document/backup_20251019_144638/[108]阶段D-2-互动系统关注功能实现计划.md         | Markdown     |      1,461 |          0 |        369 |      1,830 |
+| /home/kun/projects/SharePix/backend-service/project_document/backup_20251019_144638/[109]用户信息更新接口BUG修复报告.md            | Markdown     |        383 |          0 |        112 |        495 |
+| /home/kun/projects/SharePix/backend-service/project_document/backup_20251019_144638/[110]Feed流性能优化报告.md                | Markdown     |        400 |          0 |        124 |        524 |
+| /home/kun/projects/SharePix/backend-service/project_document/backup_20251019_144638/[110]v2.4.0-图片URL自动前缀功能.md         | Markdown     |        253 |          0 |         83 |        336 |
+| /home/kun/projects/SharePix/backend-service/project_document/backup_20251019_144638/[110]阶段C-3-帖子图片静态文件服务修复方案.md       | Markdown     |        299 |          0 |         71 |        370 |
+| /home/kun/projects/SharePix/backend-service/project_document/backup_20251019_144638/[111]Deep Link配置使用教程-鸿蒙开发指南.md     | Markdown     |      1,700 |          2 |        374 |      2,076 |
+| /home/kun/projects/SharePix/backend-service/project_document/backup_20251019_144638/[111]阶段D-4-图片静态文件服务实现方案.md         | Markdown     |        524 |          0 |        134 |        658 |
+| /home/kun/projects/SharePix/backend-service/project_document/backup_20251019_144638/[112]Base64图片上传问题分析与解决方案.md        | Markdown     |        426 |          0 |        153 |        579 |
+| /home/kun/projects/SharePix/backend-service/project_document/backup_20251019_144638/[112]JWT测试.md                      | Markdown     |        644 |          0 |        158 |        802 |
+| /home/kun/projects/SharePix/backend-service/project_document/backup_20251019_144638/[113]全流程测试报告-帖子管理重点.md             | Markdown     |        284 |          0 |         73 |        357 |
+| /home/kun/projects/SharePix/backend-service/project_document/backup_20251019_144638/[113]日志监控指南-图片上传排查手册.md            | Markdown     |        479 |          0 |        163 |        642 |
+| /home/kun/projects/SharePix/backend-service/project_document/backup_20251019_144638/[114]多图片功能修复和实现报告.md               | Markdown     |        242 |          0 |         72 |        314 |
+| /home/kun/projects/SharePix/backend-service/project_document/backup_20251019_144638/[115]创建帖子接口支持JSON+Base64格式-实施计划.md | Markdown     |        686 |          0 |        202 |        888 |
+| /home/kun/projects/SharePix/backend-service/project_document/backup_20251019_144638/[116]JSON+Base64内存崩溃紧急修复报告.md      | Markdown     |        265 |          0 |         97 |        362 |
+| /home/kun/projects/SharePix/backend-service/project_document/backup_20251019_144638/[117]帖子接口用户ID逻辑化改造-实施报告.md         | Markdown     |        299 |          0 |        105 |        404 |
+| /home/kun/projects/SharePix/backend-service/project_document/backup_20251019_144638/[117]帖子接口用户ID逻辑化改造方案.md            | Markdown     |        738 |          0 |        236 |        974 |
+| /home/kun/projects/SharePix/backend-service/project_document/backup_20251019_144638/[118]Feed流用户状态批量查询优化方案.md          | Markdown     |      1,669 |          0 |        406 |      2,075 |
+| /home/kun/projects/SharePix/backend-service/project_document/backup_20251019_144638/[119]帖子详情接口添加用户昵称字段-实施方案.md        | Markdown     |        660 |          0 |        178 |        838 |
+| /home/kun/projects/SharePix/backend-service/project_document/backup_20251019_144638/[120]用户头像上传功能-实施方案.md              | Markdown     |      1,407 |          0 |        380 |      1,787 |
+| /home/kun/projects/SharePix/backend-service/project_document/backup_20251019_144638/[121]关注功能完整测试报告.md                 | Markdown     |         57 |          0 |         16 |         73 |
+| /home/kun/projects/SharePix/backend-service/project_document/backup_20251019_144638/[121]头像上传功能内存泄漏问题分析报告.md           | Markdown     |        442 |          0 |        133 |        575 |
+| /home/kun/projects/SharePix/backend-service/project_document/backup_20251019_144638/[122]关注功能测试问题汇总.md                 | Markdown     |        519 |          0 |        178 |        697 |
+| /home/kun/projects/SharePix/backend-service/project_document/backup_20251019_144638/[123]获取用户帖子接口问题修复方案.md             | Markdown     |        936 |          4 |        321 |      1,261 |
+| /home/kun/projects/SharePix/backend-service/project_document/backup_20251019_144638/[200]数据库设计文档.md                    | Markdown     |        353 |          0 |        120 |        473 |
+| /home/kun/projects/SharePix/backend-service/project_document/backup_20251019_144638/[201]性能优化专题.md                     | Markdown     |        412 |          0 |        127 |        539 |
+| /home/kun/projects/SharePix/backend-service/project_document/backup_20251019_144638/创建帖子请求流程文档.md                      | Markdown     |        330 |          0 |        102 |        432 |
+| /home/kun/projects/SharePix/backend-service/project_document/backup_20251019_144638/文档重新编号方案.md                        | Markdown     |        238 |          0 |         79 |        317 |
+| /home/kun/projects/SharePix/backend-service/project_document/rename_docs.sh                                            | Shell Script |         92 |         13 |         18 |        123 |
+| /home/kun/projects/SharePix/backend-service/project_document/创建帖子请求流程文档.md                                             | Markdown     |       -330 |          0 |       -102 |       -432 |
+| /home/kun/projects/SharePix/backend-service/project_document/文档重新编号方案.md                                               | Markdown     |        238 |          0 |         79 |        317 |
+| /home/kun/projects/SharePix/backend-service/src/api/auth_handler.cpp                                                   | C++          |         68 |         12 |         21 |        101 |
+| /home/kun/projects/SharePix/backend-service/src/api/auth_handler.h                                                     | C++          |          1 |          5 |          1 |          7 |
+| /home/kun/projects/SharePix/backend-service/src/api/comment_handler.cpp                                                | C++          |        163 |         32 |         39 |        234 |
+| /home/kun/projects/SharePix/backend-service/src/api/comment_handler.h                                                  | C++          |         17 |         36 |         10 |         63 |
+| /home/kun/projects/SharePix/backend-service/src/api/favorite_handler.cpp                                               | C++          |         54 |         22 |         17 |         93 |
+| /home/kun/projects/SharePix/backend-service/src/api/favorite_handler.h                                                 | C++          |          4 |          0 |          0 |          4 |
+| /home/kun/projects/SharePix/backend-service/src/api/post_handler.cpp                                                   | C++          |        176 |         49 |         44 |        269 |
+| /home/kun/projects/SharePix/backend-service/src/api/post_handler.h                                                     | C++          |          6 |          0 |          0 |          6 |
+| /home/kun/projects/SharePix/backend-service/src/core/auth_service.cpp                                                  | C++          |         46 |          8 |         17 |         71 |
+| /home/kun/projects/SharePix/backend-service/src/core/auth_service.h                                                    | C++          |         10 |         17 |          3 |         30 |
+| /home/kun/projects/SharePix/backend-service/src/core/comment_service.cpp                                               | C++          |        370 |         56 |         85 |        511 |
+| /home/kun/projects/SharePix/backend-service/src/core/comment_service.h                                                 | C++          |         43 |         93 |         17 |        153 |
+| /home/kun/projects/SharePix/backend-service/src/core/favorite_service.cpp                                              | C++          |         31 |          5 |         10 |         46 |
+| /home/kun/projects/SharePix/backend-service/src/core/favorite_service.h                                                | C++          |          5 |         13 |          1 |         19 |
+| /home/kun/projects/SharePix/backend-service/src/core/like_service.cpp                                                  | C++          |         31 |          5 |         10 |         46 |
+| /home/kun/projects/SharePix/backend-service/src/core/like_service.h                                                    | C++          |          6 |         13 |          1 |         20 |
+| /home/kun/projects/SharePix/backend-service/src/core/post_service.cpp                                                  | C++          |          0 |          2 |          1 |          3 |
+| /home/kun/projects/SharePix/backend-service/src/core/user_service.cpp                                                  | C++          |         33 |         11 |         13 |         57 |
+| /home/kun/projects/SharePix/backend-service/src/core/user_service.h                                                    | C++          |         16 |         29 |          8 |         53 |
+| /home/kun/projects/SharePix/backend-service/src/database/comment_repository.cpp                                        | C++          |        500 |         35 |        142 |        677 |
+| /home/kun/projects/SharePix/backend-service/src/database/comment_repository.h                                          | C++          |         20 |         75 |         14 |        109 |
+| /home/kun/projects/SharePix/backend-service/src/database/favorite_repository.cpp                                       | C++          |         88 |         28 |         23 |        139 |
+| /home/kun/projects/SharePix/backend-service/src/database/favorite_repository.h                                         | C++          |          6 |         12 |          1 |         19 |
+| /home/kun/projects/SharePix/backend-service/src/database/image_repository.cpp                                          | C++          |         57 |          5 |          7 |         69 |
+| /home/kun/projects/SharePix/backend-service/src/database/like_repository.cpp                                           | C++          |         88 |         28 |         23 |        139 |
+| /home/kun/projects/SharePix/backend-service/src/database/like_repository.h                                             | C++          |          6 |         12 |          1 |         19 |
+| /home/kun/projects/SharePix/backend-service/src/database/post_repository.cpp                                           | C++          |        241 |         37 |         51 |        329 |
+| /home/kun/projects/SharePix/backend-service/src/database/post_repository.h                                             | C++          |          2 |         12 |          2 |         16 |
+| /home/kun/projects/SharePix/backend-service/src/database/user_repository.cpp                                           | C++          |        190 |         40 |         54 |        284 |
+| /home/kun/projects/SharePix/backend-service/src/database/user_repository.h                                             | C++          |          7 |         20 |          2 |         29 |
+| /home/kun/projects/SharePix/backend-service/src/models/comment.cpp                                                     | C++          |         72 |         11 |         20 |        103 |
+| /home/kun/projects/SharePix/backend-service/src/models/comment.h                                                       | C++          |         32 |         42 |         12 |         86 |
+| /home/kun/projects/SharePix/backend-service/src/models/image.cpp                                                       | C++          |          4 |          2 |          0 |          6 |
+| /home/kun/projects/SharePix/backend-service/src/models/image.h                                                         | C++          |          3 |          0 |          0 |          3 |
+| /home/kun/projects/SharePix/backend-service/src/models/post.cpp                                                        | C++          |          9 |          3 |          1 |         13 |
+| /home/kun/projects/SharePix/backend-service/src/models/post.h                                                          | C++          |          9 |          0 |          0 |          9 |
+| /home/kun/projects/SharePix/backend-service/src/server/http_server.cpp                                                 | C++          |         10 |          1 |          1 |         12 |
+| /home/kun/projects/SharePix/backend-service/src/server/http_server.h                                                   | C++          |          2 |          0 |          0 |          2 |
+| /home/kun/projects/SharePix/backend-service/src/utils/avatar_processor.cpp                                             | C++          |        204 |         45 |         56 |        305 |
+| /home/kun/projects/SharePix/backend-service/src/utils/avatar_processor.h                                               | C++          |         55 |         62 |         20 |        137 |
+| /home/kun/projects/SharePix/backend-service/test/DIAGNOSIS_RESULT.md                                                   | Markdown     |          0 |          0 |          2 |          2 |
+| /home/kun/projects/SharePix/backend-service/test/FAVORITE_400_DIAGNOSIS.md                                             | Markdown     |        171 |          0 |         57 |        228 |
+| /home/kun/projects/SharePix/backend-service/test/diagnose_follow_route.md                                              | Markdown     |          0 |          0 |          2 |          2 |
+| /home/kun/projects/SharePix/backend-service/test/test_comment_api.sh                                                   | Shell Script |        124 |         14 |         36 |        174 |
+| /home/kun/projects/SharePix/backend-service/test/test_favorite_400.sh                                                  | Shell Script |        106 |         17 |         19 |        142 |
+| /home/kun/projects/SharePix/backend-service/test/test_favorite_content_type.sh                                         | Shell Script |         34 |          7 |         12 |         53 |
+| /home/kun/projects/SharePix/backend-service/test/test_favorites_batch_query.sh                                         | Shell Script |         78 |         11 |         20 |        109 |
+| /home/kun/projects/SharePix/backend-service/test/test_memory_leak.sh                                                   | Shell Script |         22 |          3 |          6 |         31 |
+| /home/kun/projects/SharePix/backend-service/test/test_user_id_logical.sh                                               | Shell Script |        113 |         17 |         31 |        161 |
+| /home/kun/projects/SharePix/backend-service/test/test_user_posts_fix.sh                                                | Shell Script |        106 |         12 |         25 |        143 |
+| /home/kun/projects/SharePix/backend-service/test/verify_logical_id.sh                                                  | Shell Script |         39 |          6 |          5 |         50 |
+| Total                                                                                                                  |              |     41,194 |        991 |     11,132 |     53,317 |
++------------------------------------------------------------------------------------------------------------------------+--------------+------------+------------+------------+------------+

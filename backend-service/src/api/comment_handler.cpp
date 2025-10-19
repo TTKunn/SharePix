@@ -20,22 +20,30 @@ CommentHandler::CommentHandler() {
 
 // 注册所有路由
 void CommentHandler::registerRoutes(httplib::Server& server) {
+    Logger::info("CommentHandler::registerRoutes - START");
+
     // 创建评论
+    Logger::info("Registering: POST /api/v1/posts/:post_id/comments");
     server.Post("/api/v1/posts/:post_id/comments", [this](const httplib::Request& req, httplib::Response& res) {
+        Logger::info("CommentHandler::handleCreateComment called");
         handleCreateComment(req, res);
     });
 
     // 获取评论列表
+    Logger::info("Registering: GET /api/v1/posts/:post_id/comments");
     server.Get("/api/v1/posts/:post_id/comments", [this](const httplib::Request& req, httplib::Response& res) {
+        Logger::info("CommentHandler::handleGetComments called");
         handleGetComments(req, res);
     });
 
     // 删除评论
+    Logger::info("Registering: DELETE /api/v1/posts/:post_id/comments/:comment_id");
     server.Delete("/api/v1/posts/:post_id/comments/:comment_id", [this](const httplib::Request& req, httplib::Response& res) {
+        Logger::info("CommentHandler::handleDeleteComment called");
         handleDeleteComment(req, res);
     });
 
-    Logger::info("CommentHandler routes registered");
+    Logger::info("CommentHandler routes registered - COMPLETE");
 }
 
 // 处理创建评论请求

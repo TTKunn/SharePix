@@ -90,8 +90,9 @@ std::string Comment::validate() const {
         return "评论内容不能超过1000字符";
     }
 
-    // 检查特殊控制字符
-    for (char c : content_) {
+    // 检查特殊控制字符（仅针对ASCII范围）
+    for (unsigned char c : content_) {
+        // 只检查ASCII控制字符，允许UTF-8多字节字符
         if (c < 0x20 && c != '\n' && c != '\r' && c != '\t') {
             return "评论内容包含非法字符";
         }
