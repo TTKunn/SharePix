@@ -20,6 +20,7 @@ class PostHandler;
 class LikeHandler;
 class FavoriteHandler;
 class FollowHandler;
+class CommentHandler;
 
 /**
  * @brief HTTP server wrapper class
@@ -67,6 +68,7 @@ private:
     std::unique_ptr<LikeHandler> likeHandler_;
     std::unique_ptr<FavoriteHandler> favoriteHandler_;
     std::unique_ptr<FollowHandler> followHandler_;
+    std::unique_ptr<CommentHandler> commentHandler_;
     std::string host_;
     int port_;
     bool running_;

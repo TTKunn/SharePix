@@ -1861,3 +1861,97 @@ bool PostRepository::decrementFavoriteCount(MYSQL* conn, int postId) {
     }
 }
 
+// 增加评论数（原子操作）
+bool PostRepository::incrementCommentCount(MYSQL* conn, int postId) {
+    try {
+        if (!conn) {
+            Logger::error("Database connection is null");
+            return false;
+        }
+
+        MySQLStatement stmt(conn);
+        if (!stmt.isValid()) {
+            return false;
+        }
+
+        // 使用原子操作更新计数
+        const char* query = "UPDATE posts SET comment_count = comment_count + 1 WHERE id = ?";
+
+        if (mysql_stmt_prepare(stmt.get(), query, strlen(query)) != 0) {
+            Logger::error("Failed to prepare statement: " + std::string(mysql_stmt_error(stmt.get())));
+            return false;
+        }
+
+        // 绑定参数
+        MYSQL_BIND bind[1];
+        memset(bind, 0, sizeof(bind));
+
+        bind[0].buffer_type = MYSQL_TYPE_LONG;
+        bind[0].buffer = &postId;
+
+        if (mysql_stmt_bind_param(stmt.get(), bind) != 0) {
+            Logger::error("Failed to bind parameters: " + std::string(mysql_stmt_error(stmt.get())));
+            return false;
+        }
+
+        if (mysql_stmt_execute(stmt.get()) != 0) {
+            Logger::error("Failed to execute statement: " + std::string(mysql_stmt_error(stmt.get())));
+            return false;
+        }
+
+        Logger::debug("Incremented comment count for post id=" + std::to_string(postId));
+        return true;
+
+    } catch (const std::exception& e) {
+        Logger::error("Exception in incrementCommentCount: " + std::string(e.what()));
+        return false;
+    }
+}
+
+// 减少评论数（原子操作）
+bool PostRepository::decrementCommentCount(MYSQL* conn, int postId) {
+    try {
+        if (!conn) {
+            Logger::error("Database connection is null");
+            return false;
+        }
+
+        MySQLStatement stmt(conn);
+        if (!stmt.isValid()) {
+            return false;
+        }
+
+        // 使用原子操作更新计数，确保不会小于0
+        const char* query = "UPDATE posts SET comment_count = comment_count - 1 WHERE id = ? AND comment_count > 0";
+
+        if (mysql_stmt_prepare(stmt.get(), query, strlen(query)) != 0) {
+            Logger::error("Failed to prepare statement: " + std::string(mysql_stmt_error(stmt.get())));
+            return false;
+        }
+
+        // 绑定参数
+        MYSQL_BIND bind[1];
+        memset(bind, 0, sizeof(bind));
+
+        bind[0].buffer_type = MYSQL_TYPE_LONG;
+        bind[0].buffer = &postId;
+
+        if (mysql_stmt_bind_param(stmt.get(), bind) != 0) {
+            Logger::error("Failed to bind parameters: " + std::string(mysql_stmt_error(stmt.get())));
+            return false;
+        }
+
+        if (mysql_stmt_execute(stmt.get()) != 0) {
+            Logger::error("Failed to execute statement: " + std::string(mysql_stmt_error(stmt.get())));
+            return false;
+        }
+
+        Logger::debug("Decremented comment count for post id=" + std::to_string(postId));
+        return true;
+
+    } catch (const std::exception& e) {
+        Logger::error("Exception in decrementCommentCount: " + std::string(e.what()));
+        return false;
+    }
+}
+

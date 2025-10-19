@@ -10,14 +10,14 @@
 
 // 默认构造函数
 Post::Post()
-    : id_(0), userId_(0), imageCount_(0), likeCount_(0), favoriteCount_(0), viewCount_(0),
+    : id_(0), userId_(0), imageCount_(0), likeCount_(0), favoriteCount_(0), commentCount_(0), viewCount_(0),
       status_(PostStatus::APPROVED), createTime_(0), updateTime_(0) {
 }
 
 // 带参数的构造函数
 Post::Post(int id, const std::string& postId, int userId, const std::string& title)
     : id_(id), postId_(postId), userId_(userId), title_(title),
-      imageCount_(0), likeCount_(0), favoriteCount_(0), viewCount_(0),
+      imageCount_(0), likeCount_(0), favoriteCount_(0), commentCount_(0), viewCount_(0),
       status_(PostStatus::APPROVED), createTime_(std::time(nullptr)), updateTime_(std::time(nullptr)) {
 }
 
@@ -46,6 +46,7 @@ Json::Value Post::toJson(bool includeImages) const {
     json["image_count"] = imageCount_;
     json["like_count"] = likeCount_;
     json["favorite_count"] = favoriteCount_;
+    json["comment_count"] = commentCount_;
     json["view_count"] = viewCount_;
     json["status"] = statusToString(status_);
     json["create_time"] = static_cast<Json::Int64>(createTime_);

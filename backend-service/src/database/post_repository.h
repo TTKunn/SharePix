@@ -168,6 +168,22 @@ public:
      */
     bool decrementFavoriteCount(MYSQL* conn, int postId);
 
+    /**
+     * @brief 增加评论数（原子操作）
+     * @param conn MySQL连接
+     * @param postId 帖子物理ID
+     * @return 成功返回true，失败返回false
+     */
+    bool incrementCommentCount(MYSQL* conn, int postId);
+
+    /**
+     * @brief 减少评论数（原子操作）
+     * @param conn MySQL连接
+     * @param postId 帖子物理ID
+     * @return 成功返回true，失败返回false
+     */
+    bool decrementCommentCount(MYSQL* conn, int postId);
+
 private:
     /**
      * @brief 从预编译语句构建Post对象

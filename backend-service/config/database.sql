@@ -127,6 +127,7 @@ CREATE TABLE IF NOT EXISTS posts (
     image_count INT NOT NULL DEFAULT 0 COMMENT '图片数量（1-9张）',
     like_count INT NOT NULL DEFAULT 0 COMMENT '点赞数（冗余字段）',
     favorite_count INT NOT NULL DEFAULT 0 COMMENT '收藏数（冗余字段）',
+    comment_count INT NOT NULL DEFAULT 0 COMMENT '评论数（冗余字段）',
     view_count INT NOT NULL DEFAULT 0 COMMENT '浏览数',
     status ENUM('PENDING', 'APPROVED', 'REJECTED') NOT NULL DEFAULT 'APPROVED' COMMENT '审核状态',
     create_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
@@ -180,6 +181,26 @@ CREATE TABLE IF NOT EXISTS favorites (
     INDEX idx_user_create (user_id, create_time DESC)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='收藏表';
 
+-- Comments table for post comments (v2.8.0)
+CREATE TABLE IF NOT EXISTS comments (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '物理ID（自增主键）',
+    comment_id VARCHAR(36) NOT NULL COMMENT '业务逻辑ID（例：CMT_2025Q4_ABC123）',
+    post_id BIGINT NOT NULL COMMENT '所属帖子ID',
+    user_id BIGINT NOT NULL COMMENT '评论用户ID',
+    content TEXT NOT NULL COMMENT '评论内容（最多1000字符）',
+    create_time TIMESTAMP NULL DEFAULT CURRENT_TIMESTAMP COMMENT '评论时间',
+
+    -- Foreign keys
+    CONSTRAINT comments_ibfk_1 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT comments_ibfk_2 FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
+
+    -- Indexes for performance
+    UNIQUE KEY uk_comment_id (comment_id),
+    INDEX idx_post_id (post_id),
+    INDEX idx_user_id (user_id),
+    INDEX idx_post_create (post_id, create_time DESC)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='评论表';
+
 -- Show table structure
 SHOW TABLES;
 DESCRIBE users;
@@ -189,3 +210,4 @@ DESCRIBE image_tags;
 DESCRIBE posts;
 DESCRIBE likes;
 DESCRIBE favorites;
+DESCRIBE comments;

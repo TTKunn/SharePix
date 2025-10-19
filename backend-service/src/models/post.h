@@ -59,6 +59,7 @@ public:
     int getImageCount() const { return imageCount_; }
     int getLikeCount() const { return likeCount_; }
     int getFavoriteCount() const { return favoriteCount_; }
+    int getCommentCount() const { return commentCount_; }
     int getViewCount() const { return viewCount_; }
     PostStatus getStatus() const { return status_; }
     std::time_t getCreateTime() const { return createTime_; }
@@ -76,6 +77,7 @@ public:
     void setImageCount(int imageCount) { imageCount_ = imageCount; }
     void setLikeCount(int likeCount) { likeCount_ = likeCount; }
     void setFavoriteCount(int favoriteCount) { favoriteCount_ = favoriteCount; }
+    void setCommentCount(int commentCount) { commentCount_ = commentCount; }
     void setViewCount(int viewCount) { viewCount_ = viewCount; }
     void setStatus(PostStatus status) { status_ = status; }
     void setCreateTime(std::time_t createTime) { createTime_ = createTime; }
@@ -150,6 +152,7 @@ private:
     int imageCount_;              // 图片数量
     int likeCount_;               // 点赞数
     int favoriteCount_;           // 收藏数
+    int commentCount_;            // 评论数
     int viewCount_;               // 浏览数
     PostStatus status_;           // 审核状态
     std::time_t createTime_;      // 创建时间
