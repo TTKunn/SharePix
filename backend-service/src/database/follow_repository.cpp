@@ -609,5 +609,166 @@ Follow FollowRepository::buildFollowFromStatement(MYSQL_STMT* stmt) {
     return follow;
 }
 
+// 查询互关用户ID列表
+std::vector<int64_t> FollowRepository::findMutualFollowIds(MYSQL* conn, int64_t userId, int limit, int offset) {
+    std::vector<int64_t> mutualFollowIds;
+
+    try {
+        if (!conn) {
+            Logger::error("Database connection is null");
+            return mutualFollowIds;
+        }
+
+        MySQLStatement stmt(conn);
+        if (!stmt.isValid()) {
+            return mutualFollowIds;
+        }
+
+        // SQL查询：使用INNER JOIN查找双向关注关系
+        // f1: 我关注的人 (follower_id = userId)
+        // f2: 关注我的人 (followee_id = userId)
+        // JOIN条件: f1.followee_id = f2.follower_id (对方也关注我)
+        // 注意：使用GROUP BY代替DISTINCT，这样可以在ORDER BY中使用聚合函数
+        const char* query =
+            "SELECT f1.followee_id "
+            "FROM follows f1 "
+            "INNER JOIN follows f2 "
+            "  ON f1.followee_id = f2.follower_id "
+            "  AND f1.follower_id = f2.followee_id "
+            "WHERE f1.follower_id = ? "
+            "GROUP BY f1.followee_id "
+            "ORDER BY MAX(f1.create_time) DESC "
+            "LIMIT ? OFFSET ?";
+
+        if (mysql_stmt_prepare(stmt.get(), query, strlen(query)) != 0) {
+            Logger::error("Failed to prepare statement: " + std::string(mysql_stmt_error(stmt.get())));
+            return mutualFollowIds;
+        }
+
+        // 绑定参数
+        MYSQL_BIND bind[3];
+        memset(bind, 0, sizeof(bind));
+
+        // userId
+        bind[0].buffer_type = MYSQL_TYPE_LONGLONG;
+        bind[0].buffer = &userId;
+
+        // limit
+        bind[1].buffer_type = MYSQL_TYPE_LONG;
+        bind[1].buffer = &limit;
+
+        // offset
+        bind[2].buffer_type = MYSQL_TYPE_LONG;
+        bind[2].buffer = &offset;
+
+        if (mysql_stmt_bind_param(stmt.get(), bind) != 0) {
+            Logger::error("Failed to bind parameters: " + std::string(mysql_stmt_error(stmt.get())));
+            return mutualFollowIds;
+        }
+
+        if (mysql_stmt_execute(stmt.get()) != 0) {
+            Logger::error("Failed to execute statement: " + std::string(mysql_stmt_error(stmt.get())));
+            return mutualFollowIds;
+        }
+
+        // 绑定结果
+        int64_t mutual_user_id;
+        MYSQL_BIND result_bind[1];
+        memset(result_bind, 0, sizeof(result_bind));
+
+        result_bind[0].buffer_type = MYSQL_TYPE_LONGLONG;
+        result_bind[0].buffer = &mutual_user_id;
+
+        if (mysql_stmt_bind_result(stmt.get(), result_bind) != 0) {
+            Logger::error("Failed to bind result: " + std::string(mysql_stmt_error(stmt.get())));
+            return mutualFollowIds;
+        }
+
+        // 获取所有结果
+        while (mysql_stmt_fetch(stmt.get()) == 0) {
+            mutualFollowIds.push_back(mutual_user_id);
+        }
+
+        Logger::debug("Found " + std::to_string(mutualFollowIds.size()) +
+                     " mutual follows for user_id=" + std::to_string(userId));
+        return mutualFollowIds;
+
+    } catch (const std::exception& e) {
+        Logger::error("Exception in FollowRepository::findMutualFollowIds: " + std::string(e.what()));
+        return mutualFollowIds;
+    }
+}
+
+// 统计互关用户数量
+int FollowRepository::countMutualFollows(MYSQL* conn, int64_t userId) {
+    try {
+        if (!conn) {
+            Logger::error("Database connection is null");
+            return 0;
+        }
+
+        MySQLStatement stmt(conn);
+        if (!stmt.isValid()) {
+            return 0;
+        }
+
+        // SQL查询：统计双向关注数量
+        const char* query =
+            "SELECT COUNT(DISTINCT f1.followee_id) "
+            "FROM follows f1 "
+            "INNER JOIN follows f2 "
+            "  ON f1.followee_id = f2.follower_id "
+            "  AND f1.follower_id = f2.followee_id "
+            "WHERE f1.follower_id = ?";
+
+        if (mysql_stmt_prepare(stmt.get(), query, strlen(query)) != 0) {
+            Logger::error("Failed to prepare statement: " + std::string(mysql_stmt_error(stmt.get())));
+            return 0;
+        }
+
+        // 绑定参数
+        MYSQL_BIND bind[1];
+        memset(bind, 0, sizeof(bind));
+
+        bind[0].buffer_type = MYSQL_TYPE_LONGLONG;
+        bind[0].buffer = &userId;
+
+        if (mysql_stmt_bind_param(stmt.get(), bind) != 0) {
+            Logger::error("Failed to bind parameters: " + std::string(mysql_stmt_error(stmt.get())));
+            return 0;
+        }
+
+        if (mysql_stmt_execute(stmt.get()) != 0) {
+            Logger::error("Failed to execute statement: " + std::string(mysql_stmt_error(stmt.get())));
+            return 0;
+        }
+
+        // 绑定结果
+        int64_t count;
+        MYSQL_BIND result_bind[1];
+        memset(result_bind, 0, sizeof(result_bind));
+
+        result_bind[0].buffer_type = MYSQL_TYPE_LONGLONG;
+        result_bind[0].buffer = &count;
+
+        if (mysql_stmt_bind_result(stmt.get(), result_bind) != 0) {
+            Logger::error("Failed to bind result: " + std::string(mysql_stmt_error(stmt.get())));
+            return 0;
+        }
+
+        if (mysql_stmt_fetch(stmt.get()) == 0) {
+            Logger::debug("Counted " + std::to_string(count) +
+                         " mutual follows for user_id=" + std::to_string(userId));
+            return static_cast<int>(count);
+        }
+
+        return 0;
+
+    } catch (const std::exception& e) {
+        Logger::error("Exception in FollowRepository::countMutualFollows: " + std::string(e.what()));
+        return 0;
+    }
+}
+
 
 

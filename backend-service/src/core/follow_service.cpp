@@ -320,41 +320,90 @@ std::vector<UserListInfo> FollowService::getFollowingList(const std::string& use
         
         // 3. 计算分页参数
         int offset = (page - 1) * pageSize;
-        
-        // 4. 查询关注列表
+
+        // 4. 查询关注列表（第1次数据库查询）
         auto follows = followRepo_->findFollowingByUserId(conn, targetUserId, pageSize, offset);
-        
+
         // 5. 获取总数
         total = followRepo_->countFollowing(conn, targetUserId);
-        
-        // 6. 构建用户列表
+
+        // 如果没有关注任何人，直接返回
+        if (follows.empty()) {
+            Logger::debug("User " + userId + " is not following anyone");
+            return userList;
+        }
+
+        // ========== 批量查询优化开始 ==========
+
+        // 6. 收集所有被关注用户的ID
+        std::vector<int64_t> followeeIds;
+        followeeIds.reserve(follows.size());
         for (const auto& follow : follows) {
-            // 查询被关注用户的详细信息
-            auto followeeOpt = userRepo_->findById(follow.getFolloweeId());
-            if (!followeeOpt.has_value()) {
+            followeeIds.push_back(follow.getFolloweeId());
+        }
+
+        // 7. 批量查询用户信息（第2次数据库查询）
+        // 注意：batchGetUsers返回的User对象包含follower_count冗余字段
+        // 转换int64_t到int（物理ID在数据库中是BIGINT，但UserRepository用的是int）
+        std::vector<int> followeeIdsInt;
+        followeeIdsInt.reserve(followeeIds.size());
+        for (int64_t id : followeeIds) {
+            followeeIdsInt.push_back(static_cast<int>(id));
+        }
+        auto userMap = userRepo_->batchGetUsers(conn, followeeIdsInt);
+
+        Logger::debug("Batch fetched " + std::to_string(userMap.size()) + " users");
+
+        // 8. 批量查询关注状态（第3次数据库查询）
+        std::map<int64_t, bool> followingMap;
+        if (currentUserId > 0) {
+            followingMap = followRepo_->batchCheckExists(conn, currentUserId, followeeIds);
+            Logger::debug("Batch checked follow status for " +
+                         std::to_string(followeeIds.size()) + " users");
+        }
+
+        // 9. 组装用户列表（纯内存操作，无数据库查询）
+        userList.reserve(follows.size());
+        for (const auto& follow : follows) {
+            int64_t followeeId = follow.getFolloweeId();
+
+            // 从userMap中查找用户信息（O(1)时间复杂度）
+            auto userIt = userMap.find(static_cast<int>(followeeId));
+            if (userIt == userMap.end()) {
+                Logger::warning("User not found in batch result: " + std::to_string(followeeId));
                 continue;
             }
-            
+
+            const User& user = userIt->second;
+
             UserListInfo info;
-            info.userId = followeeOpt->getUserId();
-            info.username = followeeOpt->getUsername();
-            info.realName = followeeOpt->getRealName();
-            info.avatarUrl = followeeOpt->getAvatarUrl();
-            info.bio = followeeOpt->getBio();
-            info.followerCount = followRepo_->countFollowers(conn, follow.getFolloweeId());
+            info.userId = user.getUserId();
+            info.username = user.getUsername();
+            info.realName = user.getRealName();
+            info.avatarUrl = user.getAvatarUrl();
+            info.bio = user.getBio();
+
+            // 使用冗余字段，无需额外查询
+            info.followerCount = user.getFollowerCount();
+
             info.followedAt = static_cast<int64_t>(follow.getCreateTime());
-            
-            // 如果提供了当前用户ID，检查当前用户是否关注该用户
+
+            // 从followingMap中查找关注状态（O(1)时间复杂度）
             if (currentUserId > 0) {
-                info.isFollowing = followRepo_->exists(conn, currentUserId, follow.getFolloweeId());
+                auto statusIt = followingMap.find(followeeId);
+                info.isFollowing = (statusIt != followingMap.end() && statusIt->second);
             } else {
                 info.isFollowing = false;
             }
-            
+
             userList.push_back(info);
         }
-        
-        Logger::debug("Found " + std::to_string(userList.size()) + " following for user " + userId);
+
+        // ========== 批量查询优化结束 ==========
+
+        Logger::info("Successfully fetched " + std::to_string(userList.size()) +
+                    " following users for user " + userId +
+                    " (page " + std::to_string(page) + ", total " + std::to_string(total) + ")");
         return userList;
         
     } catch (const std::exception& e) {
@@ -390,45 +439,178 @@ std::vector<UserListInfo> FollowService::getFollowerList(const std::string& user
         
         // 3. 计算分页参数
         int offset = (page - 1) * pageSize;
-        
-        // 4. 查询粉丝列表
+
+        // 4. 查询粉丝列表（第1次数据库查询）
         auto follows = followRepo_->findFollowersByUserId(conn, targetUserId, pageSize, offset);
-        
+
         // 5. 获取总数
         total = followRepo_->countFollowers(conn, targetUserId);
-        
-        // 6. 构建用户列表
+
+        // 如果没有粉丝，直接返回
+        if (follows.empty()) {
+            Logger::debug("User " + userId + " has no followers");
+            return userList;
+        }
+
+        // ========== 批量查询优化开始 ==========
+
+        // 6. 收集所有粉丝用户的ID
+        std::vector<int64_t> followerIds;
+        followerIds.reserve(follows.size());
         for (const auto& follow : follows) {
-            // 查询粉丝用户的详细信息
-            auto followerOpt = userRepo_->findById(follow.getFollowerId());
-            if (!followerOpt.has_value()) {
+            followerIds.push_back(follow.getFollowerId());
+        }
+
+        // 7. 批量查询用户信息（第2次数据库查询）
+        std::vector<int> followerIdsInt;
+        followerIdsInt.reserve(followerIds.size());
+        for (int64_t id : followerIds) {
+            followerIdsInt.push_back(static_cast<int>(id));
+        }
+        auto userMap = userRepo_->batchGetUsers(conn, followerIdsInt);
+
+        Logger::debug("Batch fetched " + std::to_string(userMap.size()) + " followers");
+
+        // 8. 批量查询关注状态（第3次数据库查询）
+        std::map<int64_t, bool> followingMap;
+        if (currentUserId > 0) {
+            followingMap = followRepo_->batchCheckExists(conn, currentUserId, followerIds);
+            Logger::debug("Batch checked follow status for " +
+                         std::to_string(followerIds.size()) + " users");
+        }
+
+        // 9. 组装用户列表（纯内存操作）
+        userList.reserve(follows.size());
+        for (const auto& follow : follows) {
+            int64_t followerId = follow.getFollowerId();
+
+            auto userIt = userMap.find(static_cast<int>(followerId));
+            if (userIt == userMap.end()) {
+                Logger::warning("User not found in batch result: " + std::to_string(followerId));
                 continue;
             }
-            
+
+            const User& user = userIt->second;
+
             UserListInfo info;
-            info.userId = followerOpt->getUserId();
-            info.username = followerOpt->getUsername();
-            info.realName = followerOpt->getRealName();
-            info.avatarUrl = followerOpt->getAvatarUrl();
-            info.bio = followerOpt->getBio();
-            info.followerCount = followRepo_->countFollowers(conn, follow.getFollowerId());
+            info.userId = user.getUserId();
+            info.username = user.getUsername();
+            info.realName = user.getRealName();
+            info.avatarUrl = user.getAvatarUrl();
+            info.bio = user.getBio();
+            info.followerCount = user.getFollowerCount();
             info.followedAt = static_cast<int64_t>(follow.getCreateTime());
-            
-            // 如果提供了当前用户ID，检查当前用户是否关注该粉丝
+
+            // 检查我是否关注该粉丝
             if (currentUserId > 0) {
-                info.isFollowing = followRepo_->exists(conn, currentUserId, follow.getFollowerId());
+                auto statusIt = followingMap.find(followerId);
+                info.isFollowing = (statusIt != followingMap.end() && statusIt->second);
             } else {
                 info.isFollowing = false;
             }
-            
+
             userList.push_back(info);
         }
-        
-        Logger::debug("Found " + std::to_string(userList.size()) + " followers for user " + userId);
+
+        // ========== 批量查询优化结束 ==========
+
+        Logger::info("Successfully fetched " + std::to_string(userList.size()) +
+                    " followers for user " + userId +
+                    " (page " + std::to_string(page) + ", total " + std::to_string(total) + ")");
         return userList;
         
     } catch (const std::exception& e) {
         Logger::error("Exception in getFollowerList: " + std::string(e.what()));
+        return userList;
+    }
+}
+
+// 获取互关列表（互相关注的人）
+std::vector<UserListInfo> FollowService::getMutualFollowList(const std::string& userId, int64_t currentUserId,
+                                                               int page, int pageSize, int& total) {
+    std::vector<UserListInfo> userList;
+    total = 0;
+
+    try {
+        // 1. 获取数据库连接
+        ConnectionGuard connGuard(DatabaseConnectionPool::getInstance());
+        if (!connGuard.isValid()) {
+            Logger::error("Failed to get database connection");
+            return userList;
+        }
+
+        MYSQL* conn = connGuard.get();
+
+        // 2. 查询用户是否存在
+        auto userOpt = userRepo_->findByUserId(userId);
+        if (!userOpt.has_value()) {
+            Logger::warning("User not found: " + userId);
+            return userList;
+        }
+
+        int64_t targetUserId = userOpt->getId();
+
+        // 3. 计算分页参数
+        int offset = (page - 1) * pageSize;
+
+        // 4. 查询互关用户ID列表（第1次数据库查询）
+        auto mutualFollowIds = followRepo_->findMutualFollowIds(conn, targetUserId, pageSize, offset);
+
+        // 5. 获取总数
+        total = followRepo_->countMutualFollows(conn, targetUserId);
+
+        // 如果没有互关好友，直接返回
+        if (mutualFollowIds.empty()) {
+            Logger::debug("User " + userId + " has no mutual follows");
+            return userList;
+        }
+
+        // ========== 批量查询优化 ==========
+
+        // 6. 批量查询用户信息（第2次数据库查询）
+        std::vector<int> mutualFollowIdsInt;
+        mutualFollowIdsInt.reserve(mutualFollowIds.size());
+        for (int64_t id : mutualFollowIds) {
+            mutualFollowIdsInt.push_back(static_cast<int>(id));
+        }
+        auto userMap = userRepo_->batchGetUsers(conn, mutualFollowIdsInt);
+
+        Logger::debug("Batch fetched " + std::to_string(userMap.size()) + " mutual follow users");
+
+        // 7. 组装用户列表（纯内存操作）
+        userList.reserve(mutualFollowIds.size());
+        for (int64_t mutualUserId : mutualFollowIds) {
+            auto userIt = userMap.find(static_cast<int>(mutualUserId));
+            if (userIt == userMap.end()) {
+                Logger::warning("User not found in batch result: " + std::to_string(mutualUserId));
+                continue;
+            }
+
+            const User& user = userIt->second;
+
+            UserListInfo info;
+            info.userId = user.getUserId();
+            info.username = user.getUsername();
+            info.realName = user.getRealName();
+            info.avatarUrl = user.getAvatarUrl();
+            info.bio = user.getBio();
+            info.followerCount = user.getFollowerCount();
+            info.followedAt = 0;  // 互关列表不需要关注时间
+
+            // 互关列表中的用户，is_following固定为true（因为是双向关注）
+            info.isFollowing = true;
+
+            userList.push_back(info);
+        }
+
+        Logger::info("Successfully fetched " + std::to_string(userList.size()) +
+                    " mutual follows for user " + userId +
+                    " (page " + std::to_string(page) + ", total " + std::to_string(total) + ")");
+
+        return userList;
+
+    } catch (const std::exception& e) {
+        Logger::error("Exception in getMutualFollowList: " + std::string(e.what()));
         return userList;
     }
 }

@@ -45,6 +45,11 @@ void FollowHandler::registerRoutes(httplib::Server& server) {
         handleGetFollowerList(req, res);
     });
 
+    // GET /api/v1/users/:user_id/mutual-follows - 获取互关列表
+    server.Get("/api/v1/users/:user_id/mutual-follows", [this](const httplib::Request& req, httplib::Response& res) {
+        handleGetMutualFollows(req, res);
+    });
+
     // GET /api/v1/users/:user_id/stats - 获取用户统计信息
     server.Get("/api/v1/users/:user_id/stats", [this](const httplib::Request& req, httplib::Response& res) {
         handleGetUserStats(req, res);
@@ -339,6 +344,74 @@ void FollowHandler::handleGetFollowerList(const httplib::Request& req, httplib::
         
     } catch (const std::exception& e) {
         Logger::error("Exception in handleGetFollowerList: " + std::string(e.what()));
+        sendErrorResponse(res, 500, "服务器内部错误");
+    }
+}
+
+// GET /api/v1/users/:user_id/mutual-follows - 获取互关列表
+void FollowHandler::handleGetMutualFollows(const httplib::Request& req, httplib::Response& res) {
+    try {
+        // 1. 提取路径参数
+        std::string userId = req.path_params.at("user_id");
+
+        // 2. 提取查询参数
+        int page = 1;
+        int pageSize = 20;
+
+        if (req.has_param("page")) {
+            page = std::stoi(req.get_param_value("page"));
+            if (page < 1) page = 1;
+        }
+
+        if (req.has_param("page_size")) {
+            pageSize = std::stoi(req.get_param_value("page_size"));
+            if (pageSize < 1) pageSize = 20;
+            if (pageSize > 100) pageSize = 100;  // 限制最大值
+        }
+
+        // 3. 可选JWT验证（用于标记is_following）
+        int64_t currentUserId = 0;
+        std::string authHeader = req.get_header_value("Authorization");
+
+        if (!authHeader.empty() && authHeader.substr(0, 7) == "Bearer ") {
+            std::string token = authHeader.substr(7);
+            auto jwtManager = std::make_unique<JWTManager>();
+
+            if (jwtManager->validateToken(token)) {
+                Json::Value tokenData = jwtManager->decodeToken(token);
+                currentUserId = std::stoll(tokenData["subject"].asString());
+            }
+        }
+
+        // 4. 调用Service
+        int total = 0;
+        std::vector<UserListInfo> userList = followService_->getMutualFollowList(userId, currentUserId, page, pageSize, total);
+
+        // 5. 构建响应
+        Json::Value responseData;
+        responseData["total"] = total;
+        responseData["page"] = page;
+        responseData["page_size"] = pageSize;
+
+        Json::Value usersArray(Json::arrayValue);
+        for (const auto& user : userList) {
+            Json::Value userJson;
+            userJson["user_id"] = user.userId;
+            userJson["username"] = user.username;
+            userJson["real_name"] = user.realName;
+            userJson["avatar_url"] = user.avatarUrl;
+            userJson["bio"] = user.bio;
+            userJson["follower_count"] = user.followerCount;
+            userJson["is_following"] = user.isFollowing;  // 互关列表中固定为true
+            userJson["followed_at"] = static_cast<Json::Int64>(user.followedAt);
+            usersArray.append(userJson);
+        }
+        responseData["users"] = usersArray;
+
+        sendJsonResponse(res, 200, true, "查询成功", responseData);
+
+    } catch (const std::exception& e) {
+        Logger::error("Exception in handleGetMutualFollows: " + std::string(e.what()));
         sendErrorResponse(res, 500, "服务器内部错误");
     }
 }

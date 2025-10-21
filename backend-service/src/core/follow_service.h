@@ -148,6 +148,25 @@ public:
                                                int page, int pageSize, int& total);
 
     /**
+     * @brief 获取互关列表（互相关注的人）
+     *
+     * 查找同时满足以下条件的用户：
+     * - 我关注了对方
+     * - 对方也关注了我
+     *
+     * @param userId 用户业务ID
+     * @param currentUserId 当前登录用户ID（物理ID，可选，用于标记is_following）
+     * @param page 页码（从1开始）
+     * @param pageSize 每页数量
+     * @param total 返回总数（输出参数）
+     * @return 用户列表
+     *
+     * @note 使用批量查询优化，查询次数固定为2次（无论列表大小）
+     */
+    std::vector<UserListInfo> getMutualFollowList(const std::string& userId, int64_t currentUserId,
+                                                   int page, int pageSize, int& total);
+
+    /**
      * @brief 获取用户统计信息
      *
      * @param userId 用户业务ID

@@ -101,8 +101,34 @@ public:
      * @param followeeIds 被关注者ID列表（物理ID）
      * @return Map<followeeId, isFollowing>
      */
-    std::map<int64_t, bool> batchCheckExists(MYSQL* conn, int64_t followerId, 
+    std::map<int64_t, bool> batchCheckExists(MYSQL* conn, int64_t followerId,
                                               const std::vector<int64_t>& followeeIds);
+
+    /**
+     * @brief 查询互关用户ID列表
+     *
+     * 查找同时满足以下条件的用户：
+     * - 我关注了对方（A follows B）
+     * - 对方也关注了我（B follows A）
+     *
+     * @param conn MySQL连接
+     * @param userId 用户ID（物理ID）
+     * @param limit 每页数量
+     * @param offset 偏移量
+     * @return 互关用户的物理ID列表
+     *
+     * @note SQL策略：使用INNER JOIN查询双向关注关系
+     * @note 性能：利用idx_follower_create和idx_followee_create索引
+     */
+    std::vector<int64_t> findMutualFollowIds(MYSQL* conn, int64_t userId, int limit, int offset);
+
+    /**
+     * @brief 统计互关用户数量
+     * @param conn MySQL连接
+     * @param userId 用户ID（物理ID）
+     * @return 互关用户数量
+     */
+    int countMutualFollows(MYSQL* conn, int64_t userId);
 
 private:
     /**

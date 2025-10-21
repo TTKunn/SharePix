@@ -73,6 +73,13 @@ private:
     void handleGetFollowerList(const httplib::Request& req, httplib::Response& res);
 
     /**
+     * @brief GET /api/v1/users/:user_id/mutual-follows - 获取互关列表
+     * @param req HTTP请求
+     * @param res HTTP响应
+     */
+    void handleGetMutualFollows(const httplib::Request& req, httplib::Response& res);
+
+    /**
      * @brief GET /api/v1/users/:user_id/stats - 获取用户统计信息
      * @param req HTTP请求
      * @param res HTTP响应
