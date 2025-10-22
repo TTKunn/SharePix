@@ -13,6 +13,7 @@
 #include "api/favorite_handler.h"
 #include "api/follow_handler.h"
 #include "api/comment_handler.h"
+#include "api/share_handler.h"
 #include "utils/config_manager.h"
 #include "utils/logger.h"
 #include "database/connection_pool.h"
@@ -29,6 +30,7 @@ HttpServer::HttpServer()
       favoriteHandler_(std::make_unique<FavoriteHandler>()),
       followHandler_(std::make_unique<FollowHandler>()),
       commentHandler_(std::make_unique<CommentHandler>()),
+      shareHandler_(std::make_unique<ShareHandler>()),
       host_("0.0.0.0"),
       port_(8080),
       running_(false) {
@@ -144,6 +146,9 @@ void HttpServer::setupRoutes() {
 
     // 注册评论相关路由（必须在PostHandler之前注册，避免路由冲突）
     commentHandler_->registerRoutes(*server_);
+
+    // 注册分享相关路由（v2.10.0新增）
+    shareHandler_->registerRoutes(*server_);
 
     // 注册帖子相关路由
     postHandler_->registerRoutes(*server_);
