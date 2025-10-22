@@ -439,6 +439,7 @@ std::optional<User> AuthService::getUserProfile(int userId) {
 // 更新用户信息
 UpdateProfileResult AuthService::updateUserProfile(
     int userId,
+    const std::string& username,
     const std::string& realName,
     const std::string& email,
     const std::string& phone,
@@ -460,21 +461,37 @@ UpdateProfileResult AuthService::updateUserProfile(
             return result;
         }
 
-        // 2. 验证邮箱格式（如果提供）
+        // 2. 验证用户名格式（如果提供）
+        if (!username.empty() && !validateUsername(username)) {
+            result.message = "用户名格式无效（3-50字符，字母数字下划线）";
+            Logger::warning(result.message);
+            return result;
+        }
+
+        // 3. 如果修改了用户名，检查是否已被其他用户使用（复用phone/email的智能检测模式）
+        if (!username.empty() && username != existingUser->getUsername()) {
+            if (userRepo_->usernameExists(username)) {
+                result.message = "用户名已存在";
+                Logger::warning(result.message + ": " + username);
+                return result;
+            }
+        }
+
+        // 4. 验证邮箱格式（如果提供）
         if (!email.empty() && !validateEmail(email)) {
             result.message = "邮箱格式无效";
             Logger::warning(result.message);
             return result;
         }
 
-        // 3. 验证手机号格式（如果提供）
+        // 5. 验证手机号格式（如果提供）
         if (!phone.empty() && !validatePhone(phone)) {
             result.message = "手机号格式无效";
             Logger::warning(result.message);
             return result;
         }
 
-        // 4. 如果修改了手机号，检查是否已被其他用户使用
+        // 6. 如果修改了手机号，检查是否已被其他用户使用
         if (!phone.empty() && phone != existingUser->getPhone()) {
             if (userRepo_->phoneExists(phone)) {
                 result.message = "手机号已被使用";
@@ -483,7 +500,7 @@ UpdateProfileResult AuthService::updateUserProfile(
             }
         }
 
-        // 5. 如果修改了邮箱，检查是否已被其他用户使用
+        // 7. 如果修改了邮箱，检查是否已被其他用户使用
         if (!email.empty() && email != existingUser->getEmail()) {
             if (userRepo_->emailExists(email)) {
                 result.message = "邮箱已被使用";
@@ -492,7 +509,8 @@ UpdateProfileResult AuthService::updateUserProfile(
             }
         }
 
-        // 6. 准备更新参数（如果参数为空，使用现有值）
+        // 8. 准备更新参数（如果参数为空，使用现有值）
+        std::string finalUsername = !username.empty() ? username : existingUser->getUsername();
         std::string finalRealName = !realName.empty() ? realName : existingUser->getRealName();
         std::string finalEmail = !email.empty() ? email : existingUser->getEmail();
         std::string finalPhone = !phone.empty() ? phone : existingUser->getPhone();
@@ -501,8 +519,8 @@ UpdateProfileResult AuthService::updateUserProfile(
         std::string finalGender = !gender.empty() ? gender : existingUser->getGender();
         std::string finalLocation = !location.empty() ? location : existingUser->getLocation();
 
-        // 7. 调用Repository层更新用户信息
-        if (!userRepo_->updateUserProfile(userId, finalRealName, finalEmail, finalPhone, 
+        // 9. 调用Repository层更新用户信息
+        if (!userRepo_->updateUserProfile(userId, finalUsername, finalRealName, finalEmail, finalPhone,
                                           finalAvatarUrl, finalBio, finalGender, finalLocation)) {
             result.message = "更新用户信息失败";
             Logger::error(result.message);

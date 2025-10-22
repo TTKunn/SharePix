@@ -564,6 +564,7 @@ bool UserRepository::phoneExists(const std::string& phone) {
 
 // 更新用户基本信息
 bool UserRepository::updateUserProfile(int userId,
+                                      const std::string& username,
                                       const std::string& realName,
                                       const std::string& email,
                                       const std::string& phone,
@@ -588,7 +589,7 @@ bool UserRepository::updateUserProfile(int userId,
         // 准备SQL语句 - 只更新允许修改的字段
         const char* query =
             "UPDATE users SET "
-            "real_name = ?, email = ?, phone = ?, avatar_url = ?, "
+            "username = ?, real_name = ?, email = ?, phone = ?, avatar_url = ?, "
             "bio = ?, gender = ?, location = ?, "
             "update_time = CURRENT_TIMESTAMP "
             "WHERE id = ?";
@@ -599,7 +600,7 @@ bool UserRepository::updateUserProfile(int userId,
         }
 
         // 绑定参数
-        MYSQL_BIND bind[8];
+        MYSQL_BIND bind[9];
         memset(bind, 0, sizeof(bind));
 
         // 准备NULL标志变量
@@ -609,49 +610,54 @@ bool UserRepository::updateUserProfile(int userId,
         bool gender_is_null = gender.empty();
         bool location_is_null = location.empty();
 
-        // real_name
+        // username
         bind[0].buffer_type = MYSQL_TYPE_STRING;
-        bind[0].buffer = (char*)realName.c_str();
-        bind[0].buffer_length = realName.length();
+        bind[0].buffer = (char*)username.c_str();
+        bind[0].buffer_length = username.length();
+
+        // real_name
+        bind[1].buffer_type = MYSQL_TYPE_STRING;
+        bind[1].buffer = (char*)realName.c_str();
+        bind[1].buffer_length = realName.length();
 
         // email (可为空)
-        bind[1].buffer_type = MYSQL_TYPE_STRING;
-        bind[1].buffer = (char*)email.c_str();
-        bind[1].buffer_length = email.length();
-        bind[1].is_null = &email_is_null;
+        bind[2].buffer_type = MYSQL_TYPE_STRING;
+        bind[2].buffer = (char*)email.c_str();
+        bind[2].buffer_length = email.length();
+        bind[2].is_null = &email_is_null;
 
         // phone
-        bind[2].buffer_type = MYSQL_TYPE_STRING;
-        bind[2].buffer = (char*)phone.c_str();
-        bind[2].buffer_length = phone.length();
+        bind[3].buffer_type = MYSQL_TYPE_STRING;
+        bind[3].buffer = (char*)phone.c_str();
+        bind[3].buffer_length = phone.length();
 
         // avatar_url (可为空)
-        bind[3].buffer_type = MYSQL_TYPE_STRING;
-        bind[3].buffer = (char*)avatarUrl.c_str();
-        bind[3].buffer_length = avatarUrl.length();
-        bind[3].is_null = &avatar_is_null;
+        bind[4].buffer_type = MYSQL_TYPE_STRING;
+        bind[4].buffer = (char*)avatarUrl.c_str();
+        bind[4].buffer_length = avatarUrl.length();
+        bind[4].is_null = &avatar_is_null;
 
         // bio (可为空)
-        bind[4].buffer_type = MYSQL_TYPE_STRING;
-        bind[4].buffer = (char*)bio.c_str();
-        bind[4].buffer_length = bio.length();
-        bind[4].is_null = &bio_is_null;
+        bind[5].buffer_type = MYSQL_TYPE_STRING;
+        bind[5].buffer = (char*)bio.c_str();
+        bind[5].buffer_length = bio.length();
+        bind[5].is_null = &bio_is_null;
 
         // gender (可为空)
-        bind[5].buffer_type = MYSQL_TYPE_STRING;
-        bind[5].buffer = (char*)gender.c_str();
-        bind[5].buffer_length = gender.length();
-        bind[5].is_null = &gender_is_null;
+        bind[6].buffer_type = MYSQL_TYPE_STRING;
+        bind[6].buffer = (char*)gender.c_str();
+        bind[6].buffer_length = gender.length();
+        bind[6].is_null = &gender_is_null;
 
         // location (可为空)
-        bind[6].buffer_type = MYSQL_TYPE_STRING;
-        bind[6].buffer = (char*)location.c_str();
-        bind[6].buffer_length = location.length();
-        bind[6].is_null = &location_is_null;
+        bind[7].buffer_type = MYSQL_TYPE_STRING;
+        bind[7].buffer = (char*)location.c_str();
+        bind[7].buffer_length = location.length();
+        bind[7].is_null = &location_is_null;
 
         // userId (WHERE条件)
-        bind[7].buffer_type = MYSQL_TYPE_LONG;
-        bind[7].buffer = (char*)&userId;
+        bind[8].buffer_type = MYSQL_TYPE_LONG;
+        bind[8].buffer = (char*)&userId;
 
         if (mysql_stmt_bind_param(stmt.get(), bind) != 0) {
             Logger::error("绑定参数失败: " + std::string(mysql_stmt_error(stmt.get())));

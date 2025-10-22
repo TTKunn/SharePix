@@ -121,6 +121,7 @@ public:
      * 只更新允许用户自主修改的字段
      *
      * @param userId 用户ID
+     * @param username 用户名
      * @param realName 真实姓名
      * @param email 邮箱
      * @param avatarUrl 头像URL
@@ -131,6 +132,7 @@ public:
      * @return true 更新成功，false 更新失败
      */
     bool updateUserProfile(int userId,
+                          const std::string& username,
                           const std::string& realName,
                           const std::string& email,
                           const std::string& phone,

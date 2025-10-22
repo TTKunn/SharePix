@@ -397,6 +397,7 @@ void AuthHandler::handleUpdateProfile(const httplib::Request& req, httplib::Resp
     }
 
     // 4. 提取参数
+    std::string username = requestJson.get("username", "").asString();
     std::string realName = requestJson.get("real_name", "").asString();
     std::string email = requestJson.get("email", "").asString();
     std::string avatarUrl = requestJson.get("avatar_url", "").asString();
@@ -407,7 +408,7 @@ void AuthHandler::handleUpdateProfile(const httplib::Request& req, httplib::Resp
 
     // 5. 调用Service层更新
     UpdateProfileResult result = authService_->updateUserProfile(
-        validation.userId, realName, email, phone, avatarUrl, bio, gender, location
+        validation.userId, username, realName, email, phone, avatarUrl, bio, gender, location
     );
 
     if (!result.success) {

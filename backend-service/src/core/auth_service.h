@@ -198,9 +198,10 @@ public:
     std::optional<User> getUserProfile(int userId);
 
     /**
-     * @brief 更新用户信息（v2.1.0）
+     * @brief 更新用户信息（v2.1.0, v2.9.0新增username）
      *
      * @param userId 用户ID（物理ID）
+     * @param username 用户名
      * @param realName 真实姓名
      * @param email 邮箱
      * @param phone 手机号
@@ -212,6 +213,7 @@ public:
      */
     UpdateProfileResult updateUserProfile(
         int userId,
+        const std::string& username,
         const std::string& realName,
         const std::string& email,
         const std::string& phone,
