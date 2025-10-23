@@ -1,9 +1,5 @@
-/**
- * @file http_server.cpp
- * @brief HTTP server implementation using cpp-httplib
- * @author Shared Parking Team
- * @date 2024-01-01
- */
+// HTTP服务器实现（基于cpp-httplib）
+// Knot Team
 
 #include "server/http_server.h"
 #include "api/auth_handler.h"
@@ -44,23 +40,23 @@ HttpServer::~HttpServer() {
 
 bool HttpServer::initialize() {
     try {
-        // Load configuration
+        // 加载配置
         auto& config = ConfigManager::getInstance();
         host_ = config.get<std::string>("server.host", "0.0.0.0");
         port_ = config.get<int>("server.port", 8080);
         
         Logger::info("Initializing HTTP server on " + host_ + ":" + std::to_string(port_));
         
-        // Setup middleware
+        // 设置中间件
         setupMiddleware();
         
-        // Setup CORS
+        // 设置CORS
         setupCORS();
         
-        // Setup routes
+        // 设置路由
         setupRoutes();
         
-        // Setup error handlers
+        // 设置错误处理器
         setupErrorHandlers();
         
         Logger::info("HTTP server initialized successfully");
@@ -80,10 +76,10 @@ bool HttpServer::start() {
     
     Logger::info("Starting HTTP server...");
     
-    // Start server in a separate thread
+    // 在独立线程中启动服务器
     running_ = true;
     
-    // This is a blocking call
+    // 这是阻塞调用
     bool result = server_->listen(host_.c_str(), port_);
     
     if (!result) {
@@ -109,13 +105,13 @@ void HttpServer::stop() {
 }
 
 void HttpServer::setupMiddleware() {
-    // Request logging middleware
+    // 请求日志中间件
     server_->set_pre_routing_handler([](const httplib::Request& req, httplib::Response& res) {
         Logger::info("Request: " + req.method + " " + req.path);
         return httplib::Server::HandlerResponse::Unhandled;
     });
 
-    // Response logging middleware + CORS headers (合并处理,避免重复设置导致覆盖)
+    // 响应日志中间件 + CORS头（合并处理，避免重复设置导致覆盖）
     server_->set_post_routing_handler([](const httplib::Request& req, httplib::Response& res) {
         // 1. 记录响应日志
         Logger::info("Response: " + std::to_string(res.status) + " for " + req.method + " " + req.path);
@@ -159,17 +155,17 @@ void HttpServer::setupRoutes() {
     // 设置静态文件服务
     setupStaticFiles();
 
-    // Health check endpoint
+    // 健康检查端点
     server_->Get("/health", [this](const httplib::Request& req, httplib::Response& res) {
         handleHealthCheck(req, res);
     });
 
-    // Metrics endpoint
+    // 指标端点
     server_->Get("/metrics", [this](const httplib::Request& req, httplib::Response& res) {
         handleMetrics(req, res);
     });
 
-    // API version endpoint
+    // API版本端点
     server_->Get("/api/v1/version", [](const httplib::Request& req, httplib::Response& res) {
         Json::Value response;
         response["version"] = "1.0.0";
@@ -184,19 +180,19 @@ void HttpServer::setupRoutes() {
     });
 }
 
-void HttpServer::setupCORS() {
-    // CORS headers - 已在 setupMiddleware() 中的 post_routing_handler 里统一处理
-    // 避免重复设置 post_routing_handler 导致覆盖,这是导致 BUG #1 的根因
+// void HttpServer::setupCORS() {
+//     // CORS头 - 已在 setupMiddleware() 中的 post_routing_handler 里统一处理
+//     // 避免重复设置 post_routing_handler 导致覆盖，这是导致 BUG #1 的根因
 
-    // Handle OPTIONS requests
-    // ⚠️ 临时注释测试 - 怀疑正则路由 ".*" 干扰POST路由匹配
-    // server_->Options(".*", [](const httplib::Request& req, httplib::Response& res) {
-    //     res.status = 204;
-    // });
-}
+//     // 处理OPTIONS请求
+//     // ⚠️ 临时注释测试 - 怀疑正则路由 ".*" 干扰POST路由匹配
+//     // server_->Options(".*", [](const httplib::Request& req, httplib::Response& res) {
+//     //     res.status = 204;
+//     // });
+// }
 
 void HttpServer::setupErrorHandlers() {
-    // 404 Not Found - 只处理真正的404错误,不拦截其他4xx错误(如400)
+    // 404 Not Found - 只处理真正的404错误，不拦截其他4xx错误（如400）
     server_->set_error_handler([](const httplib::Request& req, httplib::Response& res) {
         // 只有当状态码是404时才覆盖响应
         if (res.status == 404) {
@@ -212,10 +208,10 @@ void HttpServer::setupErrorHandlers() {
 
             res.set_content(jsonStr, "application/json");
         }
-        // 其他状态码(如400, 401, 403等)保持原始响应不变
+        // 其他状态码（如400, 401, 403等）保持原始响应不变
     });
 
-    // Exception handler
+    // 异常处理器
     server_->set_exception_handler([](const httplib::Request& req, httplib::Response& res, std::exception_ptr ep) {
         try {
             std::rethrow_exception(ep);
@@ -243,7 +239,7 @@ void HttpServer::handleHealthCheck(const httplib::Request& req, httplib::Respons
     response["service"] = "Knot - Image Sharing Service";
     response["timestamp"] = static_cast<Json::Int64>(std::time(nullptr));
 
-    // Check database connection
+    // 检查数据库连接
     // 使用ConnectionGuard自动管理连接，确保连接正确归还
     ConnectionGuard connGuard(DatabaseConnectionPool::getInstance());
 
@@ -304,8 +300,8 @@ void HttpServer::setupStaticFiles() {
 
         // 设置缓存头处理（仅对静态文件）
         if (enableCache) {
-            // 注意：这里不能再次设置 post_routing_handler，因为会覆盖CORS设置
-            // 缓存头已在现有的 post_routing_handler 中统一处理
+            // 注意：这里不能再次设置post_routing_handler，因为会覆盖CORS设置
+            // 缓存头已在现有的post_routing_handler中统一处理
         }
 
         Logger::info("Static files configured successfully:");
@@ -322,18 +318,18 @@ void HttpServer::setupStaticFiles() {
 void HttpServer::handleMetrics(const httplib::Request& req, httplib::Response& res) {
     Json::Value response;
 
-    // Server metrics
+    // 服务器指标
     Json::Value serverMetrics;
     serverMetrics["running"] = running_;
     serverMetrics["host"] = host_;
     serverMetrics["port"] = port_;
     response["server"] = serverMetrics;
 
-    // Database metrics
+    // 数据库指标
     auto& dbPool = DatabaseConnectionPool::getInstance();
     response["database"] = dbPool.getStats();
 
-    // Timestamp
+    // 时间戳
     response["timestamp"] = static_cast<Json::Int64>(std::time(nullptr));
 
     Json::StreamWriterBuilder writer;

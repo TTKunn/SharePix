@@ -1,8 +1,6 @@
 /**
  * @file http_server.h
- * @brief HTTP server implementation using cpp-httplib
- * @author Shared Parking Team
- * @date 2024-01-01
+ * @brief 使用 cpp-httplib 实现的 HTTP 服务器
  */
 
 #pragma once
@@ -24,40 +22,40 @@ class CommentHandler;
 class ShareHandler;
 
 /**
- * @brief HTTP server wrapper class
+ * @brief HTTP 服务器封装类
  */
 class HttpServer {
 public:
     /**
-     * @brief Constructor
+     * @brief 构造函数
      */
     HttpServer();
     
     /**
-     * @brief Destructor
+     * @brief 析构函数
      */
     ~HttpServer();
     
     /**
-     * @brief Initialize server with configuration
-     * @return true if successful, false otherwise
+     * @brief 使用配置初始化服务器
+     * @return 成功返回 true，否则返回 false
      */
     bool initialize();
     
     /**
-     * @brief Start the HTTP server
-     * @return true if successful, false otherwise
+     * @brief 启动 HTTP 服务器
+     * @return 成功返回 true，否则返回 false
      */
     bool start();
     
     /**
-     * @brief Stop the HTTP server
+     * @brief 停止 HTTP 服务器
      */
     void stop();
     
     /**
-     * @brief Check if server is running
-     * @return true if running, false otherwise
+     * @brief 检查服务器是否正在运行
+     * @return 运行中返回 true，否则返回 false
      */
     bool isRunning() const { return running_; }
 
@@ -76,37 +74,37 @@ private:
     bool running_;
     
     /**
-     * @brief Setup middleware
+     * @brief 设置中间件
      */
     void setupMiddleware();
     
     /**
-     * @brief Setup routes
+     * @brief 设置路由
      */
     void setupRoutes();
     
     /**
-     * @brief Setup CORS middleware
+     * @brief 设置 CORS 中间件
      */
     void setupCORS();
     
     /**
-     * @brief Setup error handlers
+     * @brief 设置错误处理器
      */
     void setupErrorHandlers();
     
     /**
-     * @brief Setup static file serving
+     * @brief 设置静态文件服务
      */
     void setupStaticFiles();
     
     /**
-     * @brief Health check endpoint handler
+     * @brief 健康检查端点处理器
      */
     void handleHealthCheck(const httplib::Request& req, httplib::Response& res);
     
     /**
-     * @brief Metrics endpoint handler
+     * @brief 指标端点处理器
      */
     void handleMetrics(const httplib::Request& req, httplib::Response& res);
 };
